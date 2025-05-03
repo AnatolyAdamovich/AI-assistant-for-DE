@@ -16,22 +16,22 @@ class DataSource(BaseModel):
 class Metric(BaseModel):
     name: str
     description: str
-    calculation_method: str  # SQL or pseudo-code
-    visualization_method: str # e.g. barchart, "гистограмма" и т.д.
+    calculation_method: str | None = None  # SQL or pseudo-code
+    visualization_method: str | None = None # e.g. barchart, "гистограмма" и т.д.
 
 class DWH(BaseModel):
     database: str
     structure: Dict[str, str] | None = None
-    limitations: Optional[str]
-    connection_params: Dict[str, str]
+    limitations: Optional[str] | None = None
+    connection_params: Dict[str, str] | None = None
 
 class BusinessProcess(BaseModel):
     name: str
     description: str
-    roles: List[Dict[str, str]]
-    goals: List[str]
     schedule: str
-    limitations: Optional[str] | None
+    roles: List[Dict[str, str]] | None = None
+    goals: List[str] | None = None
+    limitations: Optional[str] | None = None
 
 class Transformation(BaseModel):
     name: str
@@ -39,7 +39,7 @@ class Transformation(BaseModel):
 
 class AnalyticsSpec(BaseModel):
     business_process: BusinessProcess
-    data_sources: List[DataSource]
+    data_source: DataSource
     metrics: List[Metric]
     dwh: DWH
     transformations: List[Transformation]

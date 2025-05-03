@@ -1,6 +1,6 @@
 import pytest
 from pydantic import ValidationError
-from core.specs import (
+from src.core.specs import (
     BusinessProcess, 
     DataSource, 
     Metric, 
