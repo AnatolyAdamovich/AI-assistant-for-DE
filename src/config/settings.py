@@ -1,0 +1,41 @@
+from pydantic_settings import BaseSettings
+from pydantic import Field
+from pathlib import Path
+
+class Settings(BaseSettings):
+    # OpenAI
+    OPENAI_API_KEY: str = Field(..., env="OPENAI_API_KEY")
+    BASE_URL: str = Field(..., env="BASE_URL")
+    
+    LLM_MODEL_FOR_AIRFLOW_MOVING_DATA: str = "just-ai/openai-proxy/gpt-4o"
+    TEMPERATURE_AIRFLOW_MOVING_DATA: float = 0
+    
+    LLM_MODEL_FOR_AIRFLOW_ARGS: str = "just-ai/openai-proxy/gpt-4o"
+    TEMPERATURE_AIRFLOW_ARGS: float = 0
+
+
+    # Пути к директориям для генерации файлов
+    DEPLOY_DIR: Path = Path("deploy")
+    DAGS_DIR: Path = DEPLOY_DIR / "dags"
+    OUTPUT_DAG_PATH: Path = DAGS_DIR / "pipeline.py"
+    DBT_DIR: Path = DEPLOY_DIR / "dbt"
+    DBT_MODELS_DIR: Path = DBT_DIR / "models"
+    DOCKER_COMPOSE_PATH: Path = DEPLOY_DIR / "docker-compose.yml"
+
+    # TEMPLATES
+    TEMPLATE_DAG_PATH: Path = Path("templates") / "airflow_dag_template.py"
+
+    # DBT
+    DBT_TARGET: str = "dev"
+
+    # ClickHouse-DWH
+    CLICKHOUSE_HOST: str = Field(..., env="CLICKHOUSE_HOST")
+    CLICKHOUSE_PORT: int = Field(..., env="CLICKHOUSE_PORT")
+    CLICKHOUSE_USER: str = Field(..., env="CLICKHOUSE_USER")
+    CLICKHOUSE_PASSWORD: str = Field(..., env="CLICKHOUSE_PASSWORD")
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+settings = Settings()
