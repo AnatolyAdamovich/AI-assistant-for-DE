@@ -1,4 +1,4 @@
-import re
+import yaml
 from typing import List
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
@@ -37,7 +37,26 @@ class DbtGenerator:
         pass
 
     def _generate_sources(self):
-        pass
+        '''
+        Генерация файла source.yml
+        '''
+        sources = {
+            "sources": [
+                {
+                    "name": "exported_data",
+                    "schema": "last",
+                    "tables": [
+                        {
+                            "name": self.data_source.name,
+                            "identifier": self.data_source.name + "_last_data",
+                            "description": self.data_source.description
+                        }
+                    ]
+                }
+            ]
+        }
+        self._save_yml_from_dict(content=sources,
+                                 file_path=settings.DBT_MODELS_DIR / "source.yml")
     
     def _generate_schemas(self):
         pass
@@ -53,3 +72,13 @@ class DbtGenerator:
 
     def fill_and_save_project(self):
         pass
+    
+    @staticmethod
+    def _save_yml_from_str(content: str, file_path: str) -> None:
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(content)
+    @staticmethod
+    def _save_yml_from_dict(content: dict, file_path: str) -> None:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            yaml.dump(content, f, sort_keys=False, allow_unicode=True)
+
