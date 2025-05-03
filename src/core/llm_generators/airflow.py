@@ -7,6 +7,7 @@ import re
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from src.config.settings import settings
+from src.config.prompts import prompts
 from src.core.specs import AnalyticsSpec
 
 
@@ -43,11 +44,12 @@ class AirflowDagGenerator:
             "Return only the values in Python code format"
             "(for example: schedule_interval=\"@daily\"\nstart_date=datetime(2024, 1, 1))."
         )
-        user_template = (
-            "Business process:\n"
-            "- name: {name}\n"
-            "- schedule: {schedule}\n"
-        )
+        # user_template = (
+        #     "Business process:\n"
+        #     "- name: {name}\n"
+        #     "- schedule: {schedule}\n"
+        # )
+        user_template = prompts.USER_PROMPT_AIRFLOW_MOVING_DATA
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", system_template),
             ("user", user_template)
