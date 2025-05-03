@@ -1,0 +1,7 @@
+sources:
+- name: exported_data
+  schema: last
+  tables:
+  - name: orders
+    identifier: orders_last_data
+    description: Таблица заказов
