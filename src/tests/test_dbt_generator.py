@@ -55,4 +55,5 @@ spec = AnalyticsSpec(
 
 dbt_llm = DbtGenerator(analytics_specification=spec)
 
-dbt_llm._generate_sources()
+#dbt_llm._generate_sources()
+dbt_llm._generate_profiles()

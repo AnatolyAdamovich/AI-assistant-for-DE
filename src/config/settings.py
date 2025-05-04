@@ -3,7 +3,7 @@ from pydantic import Field
 from pathlib import Path
 
 class Settings(BaseSettings):
-    # OpenAI
+    # LLM
     OPENAI_API_KEY: str = Field(..., env="OPENAI_API_KEY")
     BASE_URL: str = Field(..., env="BASE_URL")
     
@@ -28,11 +28,15 @@ class Settings(BaseSettings):
     # DBT
     DBT_TARGET: str = "dev"
 
-    # ClickHouse-DWH
-    CLICKHOUSE_HOST: str = Field(..., env="CLICKHOUSE_HOST")
-    CLICKHOUSE_PORT: int = Field(..., env="CLICKHOUSE_PORT")
-    CLICKHOUSE_USER: str = Field(..., env="CLICKHOUSE_USER")
-    CLICKHOUSE_PASSWORD: str = Field(..., env="CLICKHOUSE_PASSWORD")
+    # DWH
+    DWH_TYPE: str = Field(..., env="DWH_TYPE")
+    DWH_HOST: str = Field(..., env="DWH_HOST")
+    DWH_USER: str = Field(..., env="DWH_USER")
+    DWH_PASS: str = Field(..., env="DWH_PASS")
+    DWH_PORT: int = Field(..., env="DWH_PORT")
+    DWH_DBNAME: str = Field(..., env="DWH_DBNAME")
+    DWH_SCHEMA: str = Field(..., env="DWH_SCHEMA")
+    DWH_THREADS: int = Field(..., env="DWH_THREADS")
     
     class Config:
         env_file = ".env"

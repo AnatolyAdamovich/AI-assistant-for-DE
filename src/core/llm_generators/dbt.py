@@ -34,11 +34,34 @@ class DbtGenerator:
         pass
     
     def _generate_profiles(self):
-        pass
+        '''
+        Генерация файла profiles.yml
+        '''
+        profiles = {
+            "airflow": {
+                "target": settings.DBT_TARGET,
+                "outputs": {
+                    settings.DBT_TARGET: {
+                        "type": settings.DWH_TYPE,
+                        "host": settings.DWH_HOST,
+                        "user": settings.DWH_USER,
+                        "pass": settings.DWH_PASS,
+                        "port": settings.DWH_PORT,
+                        "dbname": settings.DWH_DBNAME,
+                        "schema": settings.DWH_SCHEMA,
+                        "threads": settings.DWH_THREADS                    
+                    }
+                }
+            }
+        }
+
+        self._save_yml_from_dict(content=profiles,
+                                 file_path=settings.DBT_DIR / "profiles.yml")
+        return profiles
 
     def _generate_sources(self):
         '''
-        Генерация файла source.yml
+        Генерация файла models/source.yml
         '''
         sources = {
             "sources": [
@@ -57,6 +80,7 @@ class DbtGenerator:
         }
         self._save_yml_from_dict(content=sources,
                                  file_path=settings.DBT_MODELS_DIR / "source.yml")
+        return sources
     
     def _generate_schemas(self):
         pass
