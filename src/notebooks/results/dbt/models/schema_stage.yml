@@ -1,0 +1,27 @@
+version: 2
+models:
+- name: stg_orders
+  description: Преобразованная стадия таблицы заказов для дальнейшего использования
+    в аналитических целях.
+  columns:
+  - name: order_id
+    description: Уникальный идентификатор заказа
+    tests:
+    - unique
+    - not_null
+  - name: product_id
+    description: Идентификатор продукта в заказе
+    tests:
+    - not_null
+  - name: timestamp
+    description: Временная метка заказа
+    tests:
+    - not_null
+  - name: customer_id
+    description: Идентификатор клиента, сделавшего заказ
+    tests:
+    - not_null
+  - name: money
+    description: Сумма заказа
+    tests:
+    - not_null
