@@ -1,12 +1,10 @@
-{% set schema = 'raw' %}
+{% set source_table = source('exported_data', 'orders') %}
 
-{{ config(materialized='view', schema=schema) }}
-
-SELECT
+select
     order_id,
     product_id,
     timestamp,
     customer_id,
-    money
-FROM
-    {{ source('raw', 'orders') }}
+    money,
+    now() as loaded_at
+from {{ source_table }}
