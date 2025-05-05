@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     LLM_MODEL_FOR_AIRFLOW_ARGS: str = "just-ai/openai-proxy/gpt-4o"
     TEMPERATURE_AIRFLOW_ARGS: float = 0
 
+    LLM_MODEL_FOR_DBT_CONFIG: str = "just-ai/openai-proxy/gpt-4o"
+    TEMPERATURE_DBT_CONFIG: float = 0
+
+    LLM_MODEL_FOR_DBT_MODEL: str = "just-ai/openai-proxy/gpt-4o"
+    TEMPERATURE_DBT_MODEL: float = 0
+
+
 
     # Пути к директориям для генерации файлов
     DEPLOY_DIR: Path = Path("deploy")
@@ -27,6 +34,8 @@ class Settings(BaseSettings):
 
     # DBT
     DBT_TARGET: str = "dev"
+    DBT_SOURCE_NAME: str = "exported_data"
+    DBT_SOURCE_SCHEMA: str = "last"
 
     # DWH
     DWH_TYPE: str = Field(..., env="DWH_TYPE")
