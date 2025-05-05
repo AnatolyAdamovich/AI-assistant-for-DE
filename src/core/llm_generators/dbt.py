@@ -15,6 +15,7 @@ class DbtGenerator:
         self.metrics = analytics_specification.metrics
         self.transformations = analytics_specification.transformations
 
+        self.parser = JsonOutputParser()
         self.llm_for_configs = ChatOpenAI(
                                 model=settings.LLM_MODEL_FOR_DBT_CONFIG,
                                 temperature=settings.TEMPERATURE_DBT_CONFIG,
@@ -97,9 +98,7 @@ class DbtGenerator:
                  ("user", user_template)]
         )
 
-        parser = JsonOutputParser()
-
-        chain = prompt_template | self.llm_for_models | parser
+        chain = prompt_template | self.llm_for_models | self.parser
                 
         result = chain.invoke(
             {"sources": sources}
@@ -116,9 +115,7 @@ class DbtGenerator:
                  ("user", user_template)]
         )
 
-        parser = JsonOutputParser()
-
-        chain = prompt_template | self.llm_for_models | parser
+        chain = prompt_template | self.llm_for_models | self.parser
                 
         result = chain.invoke(
             {"stage_models_schema": stage_models_schema,
@@ -136,9 +133,7 @@ class DbtGenerator:
                 ("user", user_template)]
         )
 
-        parser = JsonOutputParser()
-
-        chain = prompt_template | self.llm_for_models | parser
+        chain = prompt_template | self.llm_for_models | self.parser
                 
         result = chain.invoke(
             {"core_models_schema": core_models_schema,
