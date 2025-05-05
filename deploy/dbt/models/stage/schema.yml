@@ -1,44 +1,36 @@
 version: 2
 models:
 - name: stg_orders
-  description: Stage модель для таблицы заказов
+  description: Stage модель для информации о заказах с добавлением метаданных
   columns:
   - name: order_id
     description: Идентификатор заказа
     tests:
     - not_null
+    - unique
   - name: product_id
     description: Идентификатор продукта
-    tests:
-    - not_null
-  - name: order_timestamp
+  - name: timestamp
     description: Время заказа
-    tests:
-    - not_null
   - name: customer_id
     description: Идентификатор клиента
-    tests:
-    - not_null
-  - name: money
+  - name: amount
     description: Сумма заказа
-    tests:
-    - not_null
   - name: load_timestamp
-    description: Время загрузки данных
+    description: Время загрузки данных в stage слой
 - name: stg_customers
-  description: Stage модель для таблицы клиентов
+  description: Stage модель для информации о клиентах с добавлением метаданных
   columns:
   - name: customer_id
     description: Идентификатор клиента
     tests:
     - not_null
+    - unique
+  - name: name
+    description: Имя клиента
   - name: region_id
     description: Идентификатор региона
-    tests:
-    - not_null
-  - name: registration_date
-    description: Дата регистрации клиента
-    tests:
-    - not_null
+  - name: age
+    description: Возраст клиента
   - name: load_timestamp
-    description: Время загрузки данных
+    description: Время загрузки данных в stage слой

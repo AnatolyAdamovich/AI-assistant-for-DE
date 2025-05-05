@@ -1,0 +1,42 @@
+version: 2
+models:
+- name: int_orders_enriched
+  description: Enriched order data with customer information
+  columns:
+  - name: order_id
+    description: Unique identifier for the order
+    tests:
+    - not_null
+    - unique
+  - name: product_id
+    description: Unique identifier for the product
+  - name: timestamp
+    description: Timestamp of the order
+  - name: customer_id
+    description: Unique identifier for the customer
+  - name: amount
+    description: Amount of the order
+  - name: customer_name
+    description: Name of the customer
+  - name: region_id
+    description: Region identifier of the customer
+  - name: age
+    description: Age of the customer
+- name: int_customer_summary
+  description: Summary of customer data including total orders and spending
+  columns:
+  - name: customer_id
+    description: Unique identifier for the customer
+    tests:
+    - not_null
+    - unique
+  - name: name
+    description: Name of the customer
+  - name: region_id
+    description: Region identifier of the customer
+  - name: age
+    description: Age of the customer
+  - name: total_orders
+    description: Total number of orders made by the customer
+  - name: total_spent
+    description: Total amount spent by the customer

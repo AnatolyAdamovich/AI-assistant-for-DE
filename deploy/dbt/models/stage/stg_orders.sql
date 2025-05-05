@@ -6,13 +6,12 @@ WITH source_data AS (
     SELECT
         order_id,
         product_id,
-        timestamp AS order_timestamp,
+        timestamp,
         customer_id,
-        money,
+        amount,
         now() AS load_timestamp
     FROM
         {{ source('exported_data', 'orders') }}
 )
 
-SELECT *
-FROM source_data;
+SELECT * FROM source_data;

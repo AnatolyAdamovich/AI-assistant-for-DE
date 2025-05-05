@@ -19,8 +19,8 @@ DEFAULT_ARGS = {
 @dag(
     default_args=DEFAULT_ARGS,
     max_active_runs=1,
-    schedule_interval="",
-    start_date=datetime(2024, 1, 1, 12, 0),
+    schedule_interval="0 0 * * *",
+    start_date=datetime(2023, 10, 1),
     catchup=True
 )
 def airflow_pipeline():
@@ -28,30 +28,36 @@ def airflow_pipeline():
     @task
     def moving_data_from_source_to_dwh(**context) -> None:
         """
-        Функция для переноса данных из исходной базы данных PostgreSQL в аналитическую базу данных ClickHouse.
-        Данные извлекаются из таблицы 'orders' PostgreSQL и загружаются в ClickHouse для дальнейшего анализа.
+        Функция перемещает данные из источника в аналитическое хранилище данных.
+        Источником данных является база данных PostgreSQL, содержащая таблицы 'orders' и 'customers'.
+        Данные из этих таблиц извлекаются и загружаются в аналитическое хранилище ClickHouse.
         """
-        from airflow.hooks.postgres_hook import PostgresHook
-        from airflow.providers.clickhouse.hooks.clickhouse import ClickHouseHook
+
         import pandas as pd
+        from airflow.hooks.postgres_hook import PostgresHook
+        from airflow_clickhouse_plugin.hooks.clickhouse_hook import ClickHouseHook
 
-        # Инициализация хуков для соединения с базами данных
-        postgres_hook = PostgresHook(postgres_conn_id="postgres_source")
-        clickhouse_hook = ClickHouseHook(clickhouse_conn_id="clickhouse_dwh")
+        # Подключение к источнику данных PostgreSQL
+        orders_source = PostgresHook(postgres_conn_id='orders_source')
+        customers_source = PostgresHook(postgres_conn_id='customers_source')
 
-        # SQL запрос для выборки данных из PostgreSQL
-        query = """
-        SELECT order_id, customer_id, timestamp, product_id, amount
-        FROM orders
-        WHERE timestamp >= CURRENT_DATE - INTERVAL '1 day'
-        """
+        # Подключение к аналитическому хранилищу ClickHouse
+        clickhouse_dwh = ClickHouseHook(clickhouse_conn_id='clickhouse_dwh')
 
-        # Использование хука для выполнения запроса и загрузки данных в DataFrame
-        df = postgres_hook.get_pandas_df(sql=query)
+        # Извлечение данных из таблицы 'orders'
+        orders_query = "SELECT * FROM orders"
+        orders_df = orders_source.get_pandas_df(orders_query)
 
-        # Подготовка и выполнение запроса для вставки данных в ClickHouse
-        clickhouse_hook.run("CREATE TABLE IF NOT EXISTS orders (order_id Int64, customer_id Int64, timestamp DateTime, product_id Int64, amount Float64) ENGINE = MergeTree() ORDER BY timestamp")
-        clickhouse_hook.insert_dataframe("INSERT INTO orders VALUES", df)
+        # Извлечение данных из таблицы 'customers'
+        customers_query = "SELECT * FROM customers"
+        customers_df = customers_source.get_pandas_df(customers_query)
+
+        # Загрузка данных в ClickHouse
+        clickhouse_dwh.run("CREATE TABLE IF NOT EXISTS orders (order_id Int32, product_id Int32, timestamp DateTime, customer_id Int32, amount Float64) ENGINE = MergeTree() ORDER BY order_id")
+        clickhouse_dwh.run("CREATE TABLE IF NOT EXISTS customers (customer_id Int32, name String, region_id Int32, age Int32) ENGINE = MergeTree() ORDER BY customer_id")
+
+        clickhouse_dwh.insert_df('orders', orders_df)
+        clickhouse_dwh.insert_df('customers', customers_df)
 
     @task.bash
     def build_staging_models() -> str:
