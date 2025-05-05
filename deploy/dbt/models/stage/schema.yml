@@ -1,0 +1,44 @@
+version: 2
+models:
+- name: stg_orders
+  description: Stage модель для таблицы заказов
+  columns:
+  - name: order_id
+    description: Идентификатор заказа
+    tests:
+    - not_null
+  - name: product_id
+    description: Идентификатор продукта
+    tests:
+    - not_null
+  - name: order_timestamp
+    description: Время заказа
+    tests:
+    - not_null
+  - name: customer_id
+    description: Идентификатор клиента
+    tests:
+    - not_null
+  - name: money
+    description: Сумма заказа
+    tests:
+    - not_null
+  - name: load_timestamp
+    description: Время загрузки данных
+- name: stg_customers
+  description: Stage модель для таблицы клиентов
+  columns:
+  - name: customer_id
+    description: Идентификатор клиента
+    tests:
+    - not_null
+  - name: region_id
+    description: Идентификатор региона
+    tests:
+    - not_null
+  - name: registration_date
+    description: Дата регистрации клиента
+    tests:
+    - not_null
+  - name: load_timestamp
+    description: Время загрузки данных

@@ -21,11 +21,26 @@ bp = BusinessProcess(
 ds_orders = DataSource(
     name="orders",
     description="Таблица заказов",
-    data_schema={"order_id": "Int64", 'customer_id': "Int64", 
-                 "timestamp": "datetime", "product_id": "Int64", "amount": "Float64"},
+    data_schema={"order_id": "Int64",
+                 "product_id": "Int64",
+                 "timestamp": "datetime",
+                 "customer_id": "Int64",
+                 "money": "numeric"},
     type="table",
     database="PostgreSQL",
-    recommendations=["экспортировать данные за период используя поле timestamp"]
+    access_method=None,
+    recommendations=["использовать фильтрацию по дате (timestamp)"]
+)
+
+ds_customers = DataSource(
+    name="customers",
+    description="Таблица клиентов",
+    data_schema={"region_id": "Int64",
+                 "registration_date": "datetime",
+                 "customer_id": "Int64"},
+    type="table",
+    database="PostgreSQL",
+    access_method=None,
 )
 
 metric = Metric(
@@ -47,7 +62,7 @@ tr = Transformation(
 
 spec = AnalyticsSpec(
     business_process=bp,
-    data_source=ds_orders,
+    data_sources=[ds_orders, ds_customers],
     metrics=[metric],
     dwh=dwh,
     transformations=[tr]
@@ -56,4 +71,4 @@ spec = AnalyticsSpec(
 dbt_llm = DbtGenerator(analytics_specification=spec)
 
 #dbt_llm._generate_sources()
-dbt_llm._generate_profiles()
+dbt_llm.fill_and_save_project()
