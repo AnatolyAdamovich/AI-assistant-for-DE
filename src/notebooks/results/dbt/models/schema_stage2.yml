@@ -1,0 +1,50 @@
+version: 2
+models:
+- name: stg_orders
+  description: Stage layer transformation for orders data
+  columns:
+  - name: order_id
+    description: Unique identifier for the order
+    tests:
+    - unique
+    - not_null
+  - name: product_id
+    description: Identifier of the product ordered
+    tests:
+    - not_null
+  - name: timestamp
+    description: Timestamp when the order was placed
+    tests:
+    - not_null
+  - name: customer_id
+    description: Identifier of the customer who placed the order
+    tests:
+    - not_null
+  - name: money
+    description: Amount of money spent on the order
+    tests:
+    - not_null
+  - name: event_date
+    description: Date when the event occurred
+  - name: etl_loaded_at
+    description: Timestamp when the record was loaded into the warehouse
+- name: stg_customers
+  description: Stage layer transformation for customers data
+  columns:
+  - name: region_id
+    description: Region identifier for the customer
+    tests:
+    - not_null
+  - name: registration_date
+    description: Date when the customer registered
+    tests:
+    - not_null
+  - name: customer_id
+    description: Unique identifier for the customer
+    tests:
+    - unique
+    - not_null
+  - name: registration_date_trunc
+    description: Truncated registration date
+  - name: etl_loaded_at
+    description: Timestamp when the record was loaded into the warehouse
