@@ -17,7 +17,13 @@ class Prompts(BaseModel):
         default=
         """
         Создай dbt-модели для stage-слоя на основе sources.yml: {sources}.
-        Формат вывода: JSON
+        
+        Требования к dbt-моделям:
+        - Добавь метку о времени и/или другие метаданные, полезные на слое stage
+        - Используй явные материализации, указывай их в config. 
+        На этапе stage преимущественно должны быть view.
+        
+        Формат вывода: valid JSON
         """,
         description="Пользовательский промпт для генерации stage моделей"
     )
@@ -27,22 +33,18 @@ class Prompts(BaseModel):
     Ты опытный дата-инженер, реализуешь dbt-модели для stage 
     в трёхслойной архитектуре аналитического хранилища, построенного в Clickhouse.
     Сгенерируй dbt-модели, включая:
-    1. SQL-код
+    1. SQL-код (вместе с config)
     2. Описание для внесения в schema.yml (включая тесты, если они необходимы)
     
-    Требования к dbt-моделям:
-    - Добавь метку о времени и/или другие метаданные, полезные на слое stage
-    - Используй явные материализации, указывай их в config. На этапе stage преимущественно view.
-
     Структура вывода (строго в JSON):
         {{
             "stg_model_name1": "Код dbt-модели",
             "stg_model_name2": "Код dbt-модели",
             ...,
             "schema_yml": {{
-                'version': 2,
-                'models': [
-                    {{'name': "stg_model_name1", ...}},
+                "version": 2,
+                "models": [
+                    {{"name": "stg_model_name1", ...}},
                     {{"name": "stg_model_name2", ...}},
                     ...
                 ]
@@ -54,20 +56,90 @@ class Prompts(BaseModel):
     )
 
     USER_PROMPT_DBT_MODELS_CORE: str = Field(
-        default="",
+        default=
+        """
+        Создай dbt-модели для intermediate-слоя.
+        Требования:
+        - Используй модели из слоя stage: {stage_models_schema}.
+        - Используй явные материализации, указывай их в config. 
+        На этапе intermediate преимущественно incremental
+        - Учитывай специфику dbt-моделей для Clickhouse (order_by, engine, partition_by и т.д.)
+        - Нужно обработать данные: очистить, выполнить преобразования (где это необходимо), соединить (где необходимо).
+        Используй практики обработки данных на intermediate-слое и пользовательское описание преобразований: {transformations}
+        - Не усложняй код, не используй сторонние пакеты
+        
+        Формат вывода: valid JSON
+        """,
         description="Пользовательский промпт для генерации core моделей"
     )
     SYSTEM_PROMPT_DBT_MODELS_CORE: str = Field(
-        default="",
+        default=
+        """
+    Ты опытный дата-инженер, реализуешь dbt-модели для intermediate слоя 
+    в трёхслойной архитектуре аналитического хранилища, построенного в Clickhouse.
+    Сгенерируй dbt-модели, включая:
+    1. SQL-код (вместе с config)
+    2. Описание для внесения в schema.yml (включая тесты, если они необходимы)
+    
+    Структура вывода (строго в JSON):
+        {{
+            "int_model_name1": "Код dbt-модели",
+            "int_model_name2": "Код dbt-модели",
+            ...,
+            "schema_yml": {{
+                "version": 2,
+                "models": [
+                    {{"name": "int_model_name1", ...}},
+                    {{"name": "int_model_name2", ...}},
+                    ...
+                ]
+            }}
+        }}
+    """,
         description="Системный промпт для генерации core моделей"
     )
 
     USER_PROMPT_DBT_MODELS_MARTS: str = Field(
-        default="",
+        default=
+        """
+        Создай dbt-модели для marts-слоя.
+        Требования:
+        - Используй модели из слоя intermediate: {core_models_schema}.
+        - Используй явные материализации, указывай их в config. 
+        На этапе marts могут быть view, incremental, table и т.д.
+        - Учитывай специфику dbt-моделей для Clickhouse (order_by, engine, partition_by и т.д.)
+        - Используй пользовательское описание нужных метрик: {metrics}
+        - Если есть идеи, добавь 2-3 своих метрики
+        - Не усложняй код, не используй сторонние пакеты
+        
+        Формат вывода: valid JSON
+        """,
         description="Пользовательский промпт для генерации marts моделей"
     )
     SYSTEM_PROMPT_DBT_MODELS_MARTS: str = Field(
-        default="",
+        default=
+        """
+        Ты опытный дата-инженер, реализуешь dbt-модели для marts слоя 
+        в трёхслойной архитектуре аналитического хранилища, построенного в Clickhouse.
+        Сгенерируй dbt-модели, включая:
+        1. SQL-код (вместе с config)
+        2. Описание для внесения в schema.yml (включая тесты, если они необходимы)
+
+        Структура вывода (строго в JSON):
+            {{
+                "model_name1": "Код dbt-модели",
+                "model_name2": "Код dbt-модели",
+                ...,
+                "schema_yml": {{
+                    "version": 2,
+                    "models": [
+                        {{"name": "model_name1", ...}},
+                        {{"name": "model_name2", ...}},
+                        ...
+                    ]
+                }}
+            }}
+    """,
         description="Системный промпт для генерации marts моделей"
     )
 

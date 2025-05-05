@@ -20,9 +20,8 @@ class Settings(BaseSettings):
     TEMPERATURE_DBT_MODEL: float = 0
 
 
-
     # Пути к директориям для генерации файлов
-    DEPLOY_DIR: Path = Path("deploy")
+    DEPLOY_DIR: Path = Path("deploy2")
     DAGS_DIR: Path = DEPLOY_DIR / "dags"
     OUTPUT_DAG_PATH: Path = DAGS_DIR / "pipeline.py"
     DBT_DIR: Path = DEPLOY_DIR / "dbt"
