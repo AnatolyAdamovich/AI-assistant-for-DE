@@ -1,0 +1,1 @@
+WITH enriched_orders AS (SELECT o.order_id, o.product_id, o.timestamp, o.customer_id, o.money, c.region_id, c.registration_date FROM {{ ref('stg_orders') }} o LEFT JOIN {{ ref('stg_customers') }} c ON o.customer_id = c.customer_id) SELECT * FROM enriched_orders

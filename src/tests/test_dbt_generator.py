@@ -43,12 +43,21 @@ ds_customers = DataSource(
     access_method=None,
 )
 
-metric = Metric(
+metric1 = Metric(
     name="total_sales",
-    description="Общая сумма продаж в динамике",
+    description="Общая сумма продаж в динамике по дням/неделям",
     calculation_method="SUM(amount)",
     visualization_method="line_chart"
 )
+
+
+metric2 = Metric(
+    name="total_sales_per_region",
+    description="Общая сумма продаж по регионам",
+    calculation_method="SUM(amount)",
+    visualization_method="line_chart"
+)
+
 
 dwh = DWH(
     database="ClickHouse",
@@ -57,13 +66,13 @@ dwh = DWH(
 
 tr = Transformation(
     name="enrich_orders",
-    logic="JOIN orders и customers по customer_id"
+    logic="Объединить информацию о заказах и покупателях"
 )
 
 spec = AnalyticsSpec(
     business_process=bp,
     data_sources=[ds_orders, ds_customers],
-    metrics=[metric],
+    metrics=[metric1, metric2],
     dwh=dwh,
     transformations=[tr]
 )
