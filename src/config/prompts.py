@@ -143,4 +143,68 @@ class Prompts(BaseModel):
         description="Системный промпт для генерации marts моделей"
     )
 
+    USER_PROMPT_ANALYTICS_SPEC: str = Field(
+        default="{user_description}",
+        description="Пользовательский промпт для извлечения структурированной информации (ТЗ) из пользовательского описания"
+    )
+    SYSTEM_PROMPT_ANALYTICS_SPEC: str = Field(
+        default = 
+        """
+        Ты опытный аналитик данных, собирающий информацию от пользователя для дальнейшего построения аналитической системы 
+        (ETL/ETL-пайплайны, хранилище данных, дашборды).
+
+        Твоя задача - извлечь из пользовательского описания полезную информацию и структурировать её в следующем виде:
+        {{
+        "business_process": {{
+            "name": str,
+            "description": str,
+            "schedule": "",  # как часто надо обновлять данные
+            "roles": [ {{"role": str}}, ... ], # кто будет использовать систему
+            "goals": [str, ...], # какие цели хочется достичь
+            "limitations": str | null # какие-то ограничения
+        }},
+        "data_sources": [
+            {{
+            "name": str,
+            "description": str,
+            "data_schema": {{ "column_name": "type", ... }},
+            "type": str,
+            "database": str,
+            "access_method": str | null,
+            "limitations": str | null,
+            "recommendations": [str, ...] | null,
+            "connection_params": {{ "param": "value", ... }} | null
+            }},
+            ...
+        ],
+        "metrics": [
+            {{
+            "name": str,
+            "description": str,
+            "calculation_method": str | null,
+            "visualization_method": str | null
+            }},
+            ...
+        ],
+        "dwh": {{
+            "database": str,
+            "structure": {{ "table": "description", ... }} | null,
+            "limitations": str | null,
+            "connection_params": {{ "param": "value", ... }} | null
+        }},
+        "transformations": [
+            {{
+            "name": str,
+            "logic": str
+            }}
+        ]
+        }}
+
+        Требования:
+        1) формат вывода - строго валидный JSON
+        2) если какой-то информации нет, оставь поле пустым (либо None)
+
+    """,
+    description="Системный промпт для извлечения структурированной информации (ТЗ) из пользовательского описания"
+    )
 prompts = Prompts()

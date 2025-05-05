@@ -19,9 +19,12 @@ class Settings(BaseSettings):
     LLM_MODEL_FOR_DBT_MODEL: str = "just-ai/openai-proxy/gpt-4o"
     TEMPERATURE_DBT_MODEL: float = 0
 
+    LLM_MODEL_FOR_ANALYTICS_SPEC: str = "just-ai/gigachat/GigaChat-2-Pro"
+    TEMPERATURE_ANALYTICS_SPEC: float = 0
+
 
     # Пути к директориям для генерации файлов
-    DEPLOY_DIR: Path = Path("deploy2")
+    DEPLOY_DIR: Path = Path("deploy")
     DAGS_DIR: Path = DEPLOY_DIR / "dags"
     OUTPUT_DAG_PATH: Path = DAGS_DIR / "pipeline.py"
     DBT_DIR: Path = DEPLOY_DIR / "dbt"
