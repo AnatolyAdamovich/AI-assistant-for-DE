@@ -39,7 +39,7 @@ class Transformation(BaseModel):
 
 class AnalyticsSpec(BaseModel):
     business_process: BusinessProcess
-    data_source: DataSource
+    data_sources: List[DataSource]
     metrics: List[Metric]
     dwh: DWH
     transformations: List[Transformation]
