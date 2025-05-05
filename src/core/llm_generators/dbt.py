@@ -13,6 +13,7 @@ class DbtGenerator:
         
         self.data_sources = analytics_specification.data_sources
         self.metrics = analytics_specification.metrics
+        self.transformations = analytics_specification.transformations
 
         self.llm_for_configs = ChatOpenAI(
                                 model=settings.LLM_MODEL_FOR_DBT_CONFIG,
@@ -76,14 +77,16 @@ class DbtGenerator:
                 "name": ds.name,
                 "identifier": ds.name + "_last_data",
                 "description": ds.description,
-                "columns": ds.data_schema
+                "columns": [
+                    {
+                        "name": key,
+                        "data_type": data_type
+                    } 
+                    for key, data_type in ds.data_schema.items()]
             }
             sources['sources'][0]['tables'].append(table_dict)
                             
         return sources
-    
-    def _generate_schemas(self) -> dict:
-        pass
 
     def _generate_stage_models(self, sources: dict) -> dict:
         system_template = prompts.SYSTEM_PROMPT_DBT_MODELS_STAGE
@@ -104,7 +107,7 @@ class DbtGenerator:
 
         return result
 
-    def _generate_intermediate_models(self) -> List[str]:
+    def _generate_intermediate_models(self, stage_models_schema) -> List[str]:
         system_template = prompts.SYSTEM_PROMPT_DBT_MODELS_CORE
         user_template = prompts.USER_PROMPT_DBT_MODELS_CORE
 
@@ -113,65 +116,75 @@ class DbtGenerator:
                  ("user", user_template)]
         )
 
-        chain = prompt_template | self.llm_for_models
+        parser = JsonOutputParser()
 
+        chain = prompt_template | self.llm_for_models | parser
+                
         result = chain.invoke(
-            {}
+            {"stage_models_schema": stage_models_schema,
+             "transformations": self.transformations}
         )
 
-        return self._clean_sql_code(result.content)
+        return result
 
-    def _generate_marts(self):
+    def _generate_marts(self, core_models_schema):
         system_template = prompts.SYSTEM_PROMPT_DBT_MODELS_MARTS
         user_template = prompts.USER_PROMPT_DBT_MODELS_MARTS
 
         prompt_template = ChatPromptTemplate.from_messages(
-                [("system", system_template),
-                 ("user", user_template)]
+               [("system", system_template),
+                ("user", user_template)]
         )
 
-        chain = prompt_template | self.llm_for_models
+        parser = JsonOutputParser()
 
+        chain = prompt_template | self.llm_for_models | parser
+                
         result = chain.invoke(
-            {}
+            {"core_models_schema": core_models_schema,
+             "metrics": self.metrics}
         )
 
-        return self._clean_sql_code(result.content)
+        return result
 
     def fill_and_save_project(self):
+        # sources.yml
         sources = self._generate_sources()
-        profiles = self._generate_profiles()
-
-        stage_models = self._generate_stage_models(sources)
-        # TO DO: вероятно, core будет зависеть от stage, а marts от core и metrics
-        # core_models = self._generate_intermediate_models()
-        # marts_models = self._generate_marts()
-        
-        # # TO DO: схема должна на что-то опираться
-        # schemas = self._generate_schemas()
-
         self._save_yml_from_dict(content=sources,
                                  file_path=settings.DBT_MODELS_DIR / "source.yml")
+        
+        # profiles.yml
+        profiles = self._generate_profiles()
         self._save_yml_from_dict(content=profiles,
                                  file_path=settings.DBT_DIR / "profiles.yml")
-        # self._save_yml_from_dict(content=schemas,
-        #                          file_path=settings.DBT_MODELS_DIR / "schema.yml")
         
+        # stage/
+        stage_models = self._generate_stage_models(sources)
         self._save_yml_from_dict(content=stage_models['schema_yml'],
                                  file_path=settings.DBT_MODELS_DIR / "stage" / "schema.yml")
-        
         for model_name, sql_code in stage_models.items():
             if model_name != 'schema_yml':
                 self._save_sql_model(content=sql_code,
                                      file_path=settings.DBT_MODELS_DIR / "stage" / f"{model_name}.sql")
 
-        # for model_name, sql_code in core_models.items():
-        #     self._save_sql_model(content=sql_code,
-        #                          file_path=settings.DBT_MODELS_DIR / "core" / f"int_{model_name}.sql")
-        
-        # for model_name, sql_code in marts_models.items():
-        #     self._save_sql_model(content=sql_code,
-        #                          file_path=settings.DBT_MODELS_DIR / "marts" / f"{model_name}.sql")
+
+        # core/
+        core_models = self._generate_intermediate_models(stage_models_schema=stage_models['schema_yml'])
+        self._save_yml_from_dict(content=core_models['schema_yml'],
+                                 file_path=settings.DBT_MODELS_DIR / "core" / "schema.yml")
+        for model_name, sql_code in core_models.items():
+            if model_name != 'schema_yml':
+                self._save_sql_model(content=sql_code,
+                                     file_path=settings.DBT_MODELS_DIR / "core" / f"{model_name}.sql")
+
+        # marts/
+        marts_models = self._generate_marts(core_models_schema=core_models['schema_yml'])
+        self._save_yml_from_dict(content=marts_models['schema_yml'],
+                                 file_path=settings.DBT_MODELS_DIR / "marts" / "schema.yml")
+        for model_name, sql_code in marts_models.items():
+            if model_name != 'schema_yml':
+                self._save_sql_model(content=sql_code,
+                                     file_path=settings.DBT_MODELS_DIR / "marts" / f"{model_name}.sql")
             
     @staticmethod
     def _save_yml_from_str(content: str, file_path: str) -> None:
