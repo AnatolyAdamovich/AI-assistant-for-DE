@@ -2,14 +2,45 @@ from pydantic import BaseModel, Field
 
 class Prompts(BaseModel):
     
-    USER_PROMPT_AIRFLOW_MOVING_DATA: str = Field(
-        default="Business process:\n"
-                 "- name: {name}\n"
-                 "- schedule: {schedule}\n",
-        description="Пользовательский промпт для генерации функции moving_from_source_to_dwh"
+    USER_PROMPT_AIRFLOW_ARGS: str = Field(
+        default=
+        """
+        Business process:
+        - name: {name}
+        - schedule: {schedule}
+        """,
+        description="Пользовательский промпт для генерации аргументов Airflow DAG"
     )
     SYSTEM_PROMPT_AIRFLOW_ARGS: str = Field(
-        default="",
+        default=
+        """
+        You are an experienced data engineer. Your task is to choose the correct Airflow schedule_interval and start_date for a DAG,
+        based on the following business process and recommendations.
+        Return only the values in Python code format
+        (for example: schedule_interval=\"@daily\"\nstart_date=datetime(2024, 1, 1)).
+        """,
+        description="Системный промпт для генерации аргументов Airflow DAG"
+    )
+
+    USER_PROMPT_AIRFLOW_MOVING_DATA: str = Field(
+        default="""
+        Implement a function def moving_data_from_source_to_dwh(**context) -> None for an Airflow DAG.
+        - The data source has the following properties: {data_sources}
+        - For analytics database use ClickHouseHook('clickhouse_dwh')
+        - Use the appropriate Airflow connection for the database type (for example, PostgresHook(\"<name>_source\") for PostgreSQL or ClickHouseHook(\"<name>_source)\" for Clickhouse).
+        - Use only standard and popular open-source Python libraries (such as pandas, psycopg2).
+        - Add a docstring in Russian that describes what the function does.
+        - Import all needed libraries inside function.
+        - Do not add any comments, code or explanations outside the function code.
+        - Return only the function code.
+        """,
+        description="Пользовательский промпт для генерации функции moving_from_source_to_dwh"
+    )
+    SYSTEM_PROMPT_AIRFLOW_MOVING_DATA: str = Field(
+        default="""
+        You are an experienced Python data engineer writing code for an Airflow DAG. 
+        You should write a function that exports the data from the source and transfers it to the analytical dwh.
+        """,
         description="Системный промпт для генерации функции moving_from_source_to_dwh"
     )
 
@@ -207,4 +238,5 @@ class Prompts(BaseModel):
     """,
     description="Системный промпт для извлечения структурированной информации (ТЗ) из пользовательского описания"
     )
+
 prompts = Prompts()
