@@ -7,15 +7,19 @@ services:
     ports:
       - "8123:8123"
       - "9000:9000"
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: password
     volumes:
       - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse_init:/docker-entrypoint-initdb.d
     ulimits:
       nofile:
         soft: 262144
         hard: 262144
 
   metabase:
-    image: metabase/metabase:v0.49.13
+    image: metabase-with-clickhouse:latest
     container_name: metabase
     ports:
       - "3000:3000"
@@ -27,22 +31,35 @@ services:
   airflow:
     image: custom-airflow:2.8.3
     container_name: airflow
-    restart: always
-    depends_on:
-      - clickhouse
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__FERNET_KEY: 'your_fernet_key'
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: 'sqlite:////usr/local/airflow/airflow.db'
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: 'postgresql+psycopg2://airflow:airflow@postgres/airflow'
       _PIP_ADDITIONAL_REQUIREMENTS: 
+    ports:
+      - "8080:8080"
     volumes:
       - ./deploy/dags:/opt/airflow/dags
       - ./deploy/dbt:/opt/airflow/dbt
       - ./deploy/logs:/opt/airflow/logs
+    depends_on:
+      - postgres
+    command: standalone
+    
+  postgres:
+    image: postgres:13
+    container_name: postgres-airflow
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 
 volumes:
   clickhouse_data:
+  postgres_data:
   metabase_data:
   airflow_logs:
