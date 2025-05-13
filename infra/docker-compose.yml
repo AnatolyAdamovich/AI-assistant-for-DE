@@ -50,6 +50,8 @@ services:
   postgres:
     image: postgres:13
     container_name: postgres-airflow
+    ports:
+      - "6543:5432"
     environment:
       - POSTGRES_USER=airflow
       - POSTGRES_PASSWORD=airflow
