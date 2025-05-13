@@ -1,0 +1,28 @@
+sources:
+- name: exported_data
+  schema: last
+  tables:
+  - name: orders
+    identifier: orders_last_data
+    description: Таблица заказов
+    columns:
+    - name: order_id
+      data_type: Int64
+    - name: product_id
+      data_type: Int64
+    - name: timestamp
+      data_type: datetime
+    - name: customer_id
+      data_type: Int64
+    - name: money
+      data_type: numeric
+  - name: customers
+    identifier: customers_last_data
+    description: Таблица клиентов
+    columns:
+    - name: region_id
+      data_type: Int64
+    - name: registration_date
+      data_type: datetime
+    - name: customer_id
+      data_type: Int64
