@@ -41,7 +41,16 @@ class AnalyticsSpecGenerator:
         )
 
         return self._from_dict_to_analytics_spec(result)
-    
+    # extract_info_dwh
+    # extract_info_metrics
+    # extract_info_transformations
+    # extract_info_business_process
+    # extract_info_data_sources: _from_erd _from_text, _from_query _from_api from_docs
+    # recommendation_bp
+    # recommendation_metrics
+    # recommendation_dwh
+    # save_spec_to_tyml
+
     @staticmethod
     def _from_dict_to_analytics_spec(content: dict) -> AnalyticsSpec:
         '''
