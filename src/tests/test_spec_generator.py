@@ -1,4 +1,4 @@
-from src.core.llm_generators.spec import AnalyticsSpecGenerator
+from src.core.llm_generators.specification import AnalyticsSpecGenerator
 
 
 user_description = """
