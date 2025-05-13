@@ -1,0 +1,6 @@
+version: 2
+sources:
+- name: exported_data
+  tables:
+  - name: orders
+    description: Таблица заказов

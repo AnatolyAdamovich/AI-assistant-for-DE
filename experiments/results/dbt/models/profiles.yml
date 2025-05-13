@@ -1,0 +1,6 @@
+airflow:
+  target: dev
+  outputs:
+    dev:
+      type: postgresql
+      host: localhost
