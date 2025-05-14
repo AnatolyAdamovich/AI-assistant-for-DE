@@ -8,28 +8,33 @@ class Settings(BaseSettings):
     BASE_URL: str = Field(..., env="BASE_URL")
     
     LLM_MODEL_FOR_AIRFLOW_MOVING_DATA: str = "just-ai/openai-proxy/gpt-4o"
-    TEMPERATURE_AIRFLOW_MOVING_DATA: float = 0
+    TEMPERATURE_AIRFLOW_MOVING_DATA: float = 0.5
     
     LLM_MODEL_FOR_AIRFLOW_ARGS: str = "just-ai/openai-proxy/gpt-4o"
-    TEMPERATURE_AIRFLOW_ARGS: float = 0
+    TEMPERATURE_AIRFLOW_ARGS: float = 0.5
 
     LLM_MODEL_FOR_DBT_CONFIG: str = "just-ai/openai-proxy/gpt-4o"
-    TEMPERATURE_DBT_CONFIG: float = 0
+    TEMPERATURE_DBT_CONFIG: float = 0.5
 
     LLM_MODEL_FOR_DBT_MODEL: str = "just-ai/openai-proxy/gpt-4o"
-    TEMPERATURE_DBT_MODEL: float = 0
+    TEMPERATURE_DBT_MODEL: float = 0.5
 
     LLM_MODEL_FOR_ANALYTICS_SPEC: str = "just-ai/gigachat/GigaChat-2-Pro"
-    TEMPERATURE_ANALYTICS_SPEC: float = 0
+    TEMPERATURE_ANALYTICS_SPEC: float = 0.5
 
 
-    # Пути к директориям для генерации файлов
-    DEPLOY_DIR: Path = Path("deploy")
+    # Пути к директориям для генерации и сохранения файлов файлов
+    PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
+    ARTIFACTS_DIRECTORY: Path = PROJECT_ROOT / "artifacts"
+    LOGS_DIRECTORY: Path = ARTIFACTS_DIRECTORY / "logs"
+    DEPLOY_DIR: Path = ARTIFACTS_DIRECTORY / "deploy"
     DAGS_DIR: Path = DEPLOY_DIR / "dags"
     OUTPUT_DAG_PATH: Path = DAGS_DIR / "pipeline.py"
     DBT_DIR: Path = DEPLOY_DIR / "dbt"
     DBT_MODELS_DIR: Path = DBT_DIR / "models"
-    DOCKER_COMPOSE_PATH: Path = DEPLOY_DIR / "docker-compose.yml"
+
+    # Инфраструктура
+    DOCKER_COMPOSE_PATH: Path = Path("infra") / "docker-compose.yml"
 
     # TEMPLATES
     TEMPLATE_DAG_PATH: Path = Path("templates") / "airflow_dag_template.py"

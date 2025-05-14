@@ -174,10 +174,6 @@ class Prompts(BaseModel):
         description="Системный промпт для генерации marts моделей"
     )
 
-    USER_PROMPT_ANALYTICS_SPEC: str = Field(
-        default="{user_description}",
-        description="Пользовательский промпт для извлечения структурированной информации (ТЗ) из пользовательского описания"
-    )
     SYSTEM_PROMPT_ANALYTICS_SPEC: str = Field(
         default = 
         """
@@ -187,9 +183,9 @@ class Prompts(BaseModel):
         Твоя задача - извлечь из пользовательского описания полезную информацию и структурировать её в следующем виде:
         {{
         "business_process": {{
-            "name": str,
-            "description": str,
-            "schedule": "",  # как часто надо обновлять данные
+            "name": str, 
+            "description": str, # описание бизнес-процесса
+            "schedule": str,  # как часто надо обновлять данные в формате cron для airflow, например 5 4 * * *
             "roles": [ {{"role": str}}, ... ], # кто будет использовать систему
             "goals": [str, ...], # какие цели хочется достичь
             "limitations": str | null # какие-то ограничения
@@ -198,13 +194,14 @@ class Prompts(BaseModel):
             {{
             "name": str,
             "description": str,
+            "type": str, # api, database
+            "database": str, # если database, то какая (PostgreSQL, Mongodb и тд)
             "data_schema": {{ "column_name": "type", ... }},
-            "type": str,
-            "database": str,
-            "access_method": str | null,
-            "limitations": str | null,
-            "recommendations": [str, ...] | null,
-            "connection_params": {{ "param": "value", ... }} | null
+            "access_method": str, # как подключаться
+            "data_volume": str, # объемы данных
+            "limitations": str | null, 
+            "recommendations": [str, ...] 
+            "connection_params": {{ "param": "value", ... }}
             }},
             ...
         ],
@@ -212,31 +209,80 @@ class Prompts(BaseModel):
             {{
             "name": str,
             "description": str,
-            "calculation_method": str | null,
-            "visualization_method": str | null
+            "calculation_method": str, # формула, псевдокод, SQL
+            "visualization_method": str,
+            "target_value": float,
+            "alerting_rules": str
             }},
             ...
         ],
         "dwh": {{
-            "database": str,
-            "structure": {{ "table": "description", ... }} | null,
+            "database": str, # дефолтно ClickHouse
+            "environment": str, # дефолтно dev
             "limitations": str | null,
-            "connection_params": {{ "param": "value", ... }} | null
+            "connection_params": {{ "param": "value", ... }},
+            "retention_policy": {{ "layer": "TTL" }} # сколько хранить данные
         }},
         "transformations": [
             {{
             "name": str,
-            "logic": str
+            "logic": str # псевдокод, SQL, формула
             }}
         ]
         }}
 
         Требования:
-        1) формат вывода - строго валидный JSON
-        2) если какой-то информации нет, оставь поле пустым (либо None)
+        1) Формат вывода - строго валидный JSON.
+        2) Если какой-то информации нет, оставь поле пустым (либо None).
 
     """,
     description="Системный промпт для извлечения структурированной информации (ТЗ) из пользовательского описания"
+    )
+    USER_PROMPT_ANALYTICS_SPEC: str = Field(
+        default="Пользовательское описание:\n{user_description}",
+        description="Пользовательский промпт для извлечения структурированной информации (ТЗ) из пользовательского описания"
+    )
+
+    SYSTEM_PROMPT_RECOMMENDATION: str = Field(
+        default="""
+        Ты опытный аналитик данных, проектирующий аналитическую систему на основе технического задания от заказчика.
+        Архитектура аналитического хранилища трёхслойная (stage, core, marts), где на marts будут реализованы метрики, а на core данные будут преобразовываться и обогащаться 
+        (чтобы затем их было легче использовать на слое marts).
+        
+        Твоя задача - расширить набор метрик и преобразований, предложенных пользователем, и структурировать их в следующем виде:
+        {{
+        "metrics": [
+            {{
+            "name": str,
+            "description": str,
+            "calculation_method": str, # формула, псевдокод
+            "visualization_method": str,
+            "target_value": float,
+            "alerting_rules": str
+            }},
+            ...
+        ],
+        "transformations": [
+            {{
+            "name": str,
+            "logic": str # псевдокод, формула
+            }}
+        ]
+        }}
+        
+        Требования:
+        1. Формат вывода - строго валидный JSON.
+        2. Если преобразования не требуются, то оставь transformations пустым
+        """,
+        description="Системный промпт для генерации рекомендаций"
+    )
+    USER_PROMPT_RECOMMENDATION: str = Field(
+        default="""
+        Описание бизнес-процесса:\n{business_process}
+        Описание метрик:\n{metrics}
+        Описание преобразований:\n{transformations}
+        """,
+        description="Пользовательский промпт для генерации рекомендаций"
     )
 
 prompts = Prompts()
