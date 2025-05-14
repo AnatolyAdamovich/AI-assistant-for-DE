@@ -20,21 +20,20 @@ class Metric(BaseModel):
     calculation_method: str | None = None  # SQL or pseudo-code or formula
     visualization_method: str | None = None # e.g. barchart, "гистограмма" и т.д.
     target_value: float | None = None
-    alerting_rules: Dict[str, str] | None = None
+    alerting_rules: str | None = None
 
 class DWH(BaseModel):
     database: str | None = "ClickHouse"
     environment: str | None = "dev"
-    structure: Dict[str, str] | None = "Medallion"
-    limitations: Optional[str] | None = None
+    structure: str | None = "Medallion"
+    limitations: str | None = None
     connection_params: Dict[str, str] | None = None
     retention_policy: Dict[str, str] | None = None
-    update_frequency: str | None = None
 
 class BusinessProcess(BaseModel):
     name: str
     description: str
-    schedule: str
+    schedule: str = "0 0 * * *"
     roles: List[Dict[str, str]] | None = None
     goals: List[str] | None = None
     limitations: Optional[str] | None = None
