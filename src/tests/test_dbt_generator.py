@@ -1,5 +1,5 @@
 from src.core.llm_generators.dbt import DbtGenerator
-from src.core.specs import (
+from src.core.models.analytics import (
     BusinessProcess, 
     DataSource, 
     Metric, 

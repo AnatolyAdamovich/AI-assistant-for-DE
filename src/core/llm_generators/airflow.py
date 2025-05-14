@@ -9,7 +9,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from src.config.settings import settings
 from src.config.prompts import prompts
-from src.core.specs import AnalyticsSpec
+from src.core.models.analytics import AnalyticsSpec
 
 
 class AirflowDagGenerator:

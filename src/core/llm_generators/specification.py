@@ -5,7 +5,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_openai import ChatOpenAI
 from src.config.settings import settings
 from src.config.prompts import prompts
-from src.core.specs import DataSource, Metric, Transformation, BusinessProcess, DWH, AnalyticsSpec
+from src.core.models.analytics import DataSource, Metric, Transformation, BusinessProcess, DWH, AnalyticsSpec
 
 
 class AnalyticsSpecGenerator:

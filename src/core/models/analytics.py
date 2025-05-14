@@ -9,14 +9,15 @@ class DataSource(BaseModel):
     data_schema: Dict[str, str] # column_name: type;
     database: str | None = None
     access_method: str | None = None
-    limitations: Optional[str] | None = None
+    data_volume: str | None = None
+    limitations: List[str] | None = None
     recommendations: List[str] | None = None
     connection_params: Dict[str, str] | None = None
 
 class Metric(BaseModel):
     name: str
     description: str
-    calculation_method: str | None = None  # SQL or pseudo-code
+    calculation_method: str | None = None  # SQL or pseudo-code or formula
     visualization_method: str | None = None # e.g. barchart, "гистограмма" и т.д.
     target_value: float | None = None
     alerting_rules: Dict[str, str] | None = None
