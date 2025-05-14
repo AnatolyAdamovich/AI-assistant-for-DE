@@ -1,0 +1,75 @@
+business_process:
+  name: Анализ продаж интернет-магазина
+  description: Анализировать продажи и поведение покупателей для повышения выручки
+    и оптимизации маркетинговых кампаний
+  schedule: 0 3 * * *
+  roles:
+  - role: Менеджеры по продажам
+  - role: Маркетологи
+  - role: Продуктовый аналитик
+  goals:
+  - Повышение выручки
+  - Оптимизация маркетинговых кампаний
+  limitations: Ограничения по GDPR
+data_sources:
+- name: orders
+  description: Таблица заказов
+  type: database
+  database: PostgreSQL
+  data_schema:
+    order_id: int
+    product_id: int
+    timestamp: timestamp
+    customer_id: int
+    amount: float
+  access_method: SQL-запросы
+  data_volume: 20000 заказов в день
+  limitations: null
+  recommendations: []
+  connection_params: {}
+- name: customers
+  description: Таблица клиентов
+  type: database
+  database: PostgreSQL
+  data_schema:
+    customer_id: int
+    name: varchar
+    region_id: int
+    age: int
+  access_method: SQL-запросы
+  data_volume: 250000 клиентов
+  limitations: null
+  recommendations: []
+  connection_params: {}
+metrics:
+- name: Общая сумма продаж по дням
+  description: Сумма продаж за каждый день
+  calculation_method: SUM(amount) по дням
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+- name: Сумма продаж по регионам
+  description: Сумма продаж по регионам
+  calculation_method: SUM(amount) GROUP BY region_id
+  visualization_method: Диаграмма
+  target_value: null
+  alerting_rules: null
+- name: Количество уникальных покупателей по регионам
+  description: Количество уникальных покупателей по регионам
+  calculation_method: COUNT(DISTINCT customer_id) GROUP BY region_id
+  visualization_method: Таблица
+  target_value: null
+  alerting_rules: null
+- name: Средний чек
+  description: Средний чек по продажам
+  calculation_method: AVG(amount)
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+dwh:
+  database: PostgreSQL
+  environment: dev
+  limitations: Ограничения по GDPR
+  connection_params: {}
+  retention_policy: {}
+transformations: []
