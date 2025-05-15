@@ -34,6 +34,7 @@ class Settings(BaseSettings):
 
     # Инфраструктура
     DOCKER_COMPOSE_PATH: Path = PROJECT_ROOT / "infra" / "docker-compose.yml"
+    REQUIREMENTS_PATH: Path = PROJECT_ROOT / "infra" / "requirements.txt"
 
     # TEMPLATES
     TEMPLATE_DAG_PATH: Path = PROJECT_ROOT / "src" / "templates" / "airflow_dag_template.py"

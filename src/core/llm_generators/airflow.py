@@ -16,7 +16,8 @@ from src.core.models.analytics import AnalyticsSpec
 
 class AirflowDagGenerator:
     def __init__(self, analytics_specification: AnalyticsSpec,
-                 template_path: str = settings.TEMPLATE_DAG_PATH):
+                 template_path: str = settings.TEMPLATE_DAG_PATH,
+                 requirements_path: str = settings.REQUIREMENTS_PATH):
         
         self.data_sources = analytics_specification.data_sources
         self.business_process = analytics_specification.business_process
@@ -42,9 +43,12 @@ class AirflowDagGenerator:
                             )
         self.parser = JsonOutputParser()
         
-        with open(template_path, "r", encoding='utf-8') as f:
+        with open(template_path, "r", encoding="utf-8") as f:
             self.pipeline_template = f.read()
         
+        with open(requirements_path, "r", encoding="utf-8") as f:
+            self.requirements = f.read()
+         
     def _generate_dag_args(self) -> dict[str, str]:
         '''
         Генерация аргументов для airflow DAG.
@@ -95,8 +99,11 @@ class AirflowDagGenerator:
         chain = prompt_template | self.llm_for_moving | self.parser
         
         result = chain.invoke(
-            {"data_sources": self.data_sources,
-             "dwh": self.dwh}
+            {
+                "data_sources": self.data_sources,
+                "dwh": self.dwh,
+                "requirements": self.requirements
+            }
         )
 
         return result
@@ -205,6 +212,6 @@ class AirflowDagGenerator:
             Имя сохраняемого файла
         '''
         
-        output_path = settings.PROJECT_ROOT / name
+        output_path = settings.DAGS_DIR / name
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(code)        

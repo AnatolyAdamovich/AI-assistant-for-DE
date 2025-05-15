@@ -40,15 +40,15 @@ class Prompts(BaseModel):
 
         Требования:
         1. Используй Hooks и Airflow Connections, например: ClickHouseHook('dwh'), PostgresHook('source').
-        2. Используй docstrings для документации (на русском языке)
+        2. Используй docstrings для документации (на русском языке).
         3. Перед загрузкой данных в источник надо удалить прошлую версию DROP IF EXISTS ...
-        4. Импортируй все нужные библиотеки внутри функции
-        5. Используй только популярные open-source библиотеки (например, pandas, requests и т.д.)
-        6. Нужно задействовать все описанные источники данных
-        7. Используй фильтр по дате для извлечения данных, если это возможно (например, с помощью context["ds"], context["data_interval_start"] или других template variables)
-        8. Верни только работающий код функции в строго валидном JSON (оставь название функции moving_from_source_to_dwh)
+        4. Импортируй все нужные библиотеки внутри функции.
+        5. Не используй методы, которые не совместимы с версиями установленных библиотек.
+        6. Нужно задействовать все описанные источники данных.
+        7. Используй фильтр по дате для извлечения данных, если это возможно (например, с помощью context["ds"], context["data_interval_start"] или других template variables).
+        8. Верни только работающий код функции в строго валидном JSON (оставь название функции moving_data_from_source_to_dwh).
         """,
-        description="Системный промпт для генерации функции moving_from_source_to_dwh"
+        description="Системный промпт для генерации функции moving_data_from_source_to_dwh"
     )
     USER_PROMPT_AIRFLOW_MOVING_DATA: str = Field(
         default="""
@@ -57,6 +57,9 @@ class Prompts(BaseModel):
 
         Описание аналитической инфраструктуры:
         {dwh}
+
+        Версии библиотек:
+        {requirements}
         """,
         description="Пользовательский промпт для генерации функции moving_from_source_to_dwh"
     )
@@ -69,10 +72,12 @@ class Prompts(BaseModel):
 
         Описание аналитической инфраструктуры:
         DWH(database='ClickHouse', environment='dev', structure='Medallion', limitations='Ограничения по GDPR', connection_params={}, retention_policy={}
+
+        Версии библиотек:
+        airflow-clickhouse-plugin==1.4.0
         """,
         description="Пример входных данных для генерации функции moving_from_source_to_dwh"
     )
-
     AIRFLOW_MOVING_DATA_EXAMPLE_OUTPUT: str = Field(
         default="""
         {{
@@ -126,6 +131,7 @@ class Prompts(BaseModel):
         description="Системный промпт для генерации stage моделей"
     )
 
+
     USER_PROMPT_DBT_MODELS_CORE: str = Field(
         default=
         """
@@ -170,6 +176,7 @@ class Prompts(BaseModel):
         description="Системный промпт для генерации core моделей"
     )
 
+
     USER_PROMPT_DBT_MODELS_MARTS: str = Field(
         default=
         """
@@ -213,6 +220,7 @@ class Prompts(BaseModel):
     """,
         description="Системный промпт для генерации marts моделей"
     )
+
 
     SYSTEM_PROMPT_ANALYTICS_SPEC: str = Field(
         default = 
@@ -282,6 +290,7 @@ class Prompts(BaseModel):
         default="Пользовательское описание:\n{user_description}",
         description="Пользовательский промпт для извлечения структурированной информации (ТЗ) из пользовательского описания"
     )
+
 
     SYSTEM_PROMPT_RECOMMENDATION: str = Field(
         default="""
