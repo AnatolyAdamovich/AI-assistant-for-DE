@@ -23,9 +23,9 @@ class Metric(BaseModel):
     alerting_rules: str | None = None
 
 class DWH(BaseModel):
-    database: str | None = "ClickHouse"
-    environment: str | None = "dev"
-    structure: str | None = "Medallion"
+    database: str = "ClickHouse"
+    environment: str = "dev"
+    structure: str = "Medallion"
     limitations: str | None = None
     connection_params: Dict[str, str] | None = None
     retention_policy: Dict[str, str] | None = None
