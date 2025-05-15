@@ -5,19 +5,22 @@
 ## TO DO: добавить docstrings
 
 import re
+from jinja2 import Template
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import JsonOutputParser
 from src.config.settings import settings
 from src.config.prompts import prompts
 from src.core.models.analytics import AnalyticsSpec
 
 
 class AirflowDagGenerator:
-    def __init__(self, analytics_specification: AnalyticsSpec):
+    def __init__(self, analytics_specification: AnalyticsSpec,
+                 template_path: str = settings.TEMPLATE_DAG_PATH):
         
         self.data_sources = analytics_specification.data_sources
         self.business_process = analytics_specification.business_process
-
+        
         self.llm_for_moving = ChatOpenAI(
                                 model=settings.LLM_MODEL_FOR_AIRFLOW_MOVING_DATA,
                                 temperature=settings.TEMPERATURE_AIRFLOW_MOVING_DATA,
@@ -36,9 +39,32 @@ class AirflowDagGenerator:
                                 api_key=settings.OPENAI_API_KEY,
                                 base_url=settings.BASE_URL
                             )
+        self.parser = JsonOutputParser()
         
-    def _generate_dag_args(self) -> str:
-        # Генерируем schedule_interval и start_date на основе business_process
+        with open(template_path, "r", encoding='utf-8') as f:
+            self.pipeline_template = f.read()
+        
+    def _generate_dag_args(self) -> dict[str, str]:
+        '''
+        Генерация аргументов для airflow DAG.
+        '''
+        system_template = prompts.SYSTEM_PROMPT_AIRFLOW_ARGS
+        user_template = prompts.USER_PROMPT_AIRFLOW_ARGS
+        
+        prompt_template = ChatPromptTemplate.from_messages(
+               [("system", system_template),
+                ("user", user_template)]
+        )
+
+        chain = prompt_template | self.llm_for_args | self.parser
+        
+        # result = chain.invoke(
+        #     {"": }
+        # )
+        # return 
+
+    def _generate_dag_args_legacy(self) -> str:
+        
         system_template = prompts.SYSTEM_PROMPT_AIRFLOW_ARGS
         user_template = prompts.USER_PROMPT_AIRFLOW_ARGS
         
@@ -55,7 +81,7 @@ class AirflowDagGenerator:
         
         return self._clean_code(result.content)
 
-    def _generate_moving_data_function(self) -> str:
+    def _generate_moving_data_function_legacy(self) -> str:
         system_template = prompts.SYSTEM_PROMPT_AIRFLOW_MOVING_DATA
         user_template = prompts.USER_PROMPT_AIRFLOW_MOVING_DATA
         
@@ -73,30 +99,19 @@ class AirflowDagGenerator:
         cleaned_code = self._clean_code(result.content)
         return self._indent_code_block(cleaned_code, indent=4)
 
-    def fill_and_save_template(self) -> None:
-        dag_args_code = self._generate_dag_args()
+    def generate_dag(self) -> None:
+        dag_args = self._generate_dag_args()
         moving_function_code = self._generate_moving_data_function()
         
-        with open(settings.TEMPLATE_DAG_PATH, "r", encoding="utf-8") as f:
-            template = f.read()
-
-        # подстановка args
-        for line in dag_args_code.splitlines():
-            if "schedule_interval" in line:
-                template = re.sub(r'schedule_interval\s*=\s*["\']{0,1}["\']{0,1}', line, template)
-            if "start_date" in line:
-                template = re.sub(r'start_date\s*=\s*datetime\([^)]+\)', line, template)
-        
-        # подстановка moving
-        template = re.sub(
-           r"def moving_data_from_source_to_dwh\(\*\*context\) -> None:\n\s*pass",
-            moving_function_code,
-            template
+        dag_code = self._render_dag(
+            pipeline_template=self.pipeline_template,
+            dag_name=dag_args["dag_name"],
+            start_date=dag_args["start_date"],
+            schedule=dag_args["schedule"],
+            moving_data_from_source_to_dwh=moving_function_code
         )
-        
-        # сохранение итогового файла
-        with open(settings.OUTPUT_DAG_PATH, "w", encoding="utf-8") as f:
-            f.write(template)
+
+        self._save_code_to_file(code=dag_code, name=dag_args["dag_name"])
 
     @staticmethod
     def _clean_code(code_str: str) -> str:
@@ -116,5 +131,52 @@ class AirflowDagGenerator:
         first_line = lines[0]
         indented_lines = [(" " * indent) + line if line.strip() else "" for line in lines[1:]]
         return "\n".join([first_line] + indented_lines)
+    
+    @staticmethod
+    def _render_dag(pipeline_template: str, 
+                    dag_name: str, 
+                    schedule: str, 
+                    start_date: str, 
+                    moving_data_from_source_to_dwh: str) -> str:
+        '''
+        Функция для рендера: шаблон DAG заполняется значениями, 
+        которые сгенерировала LLM
 
+        Parameters
+        ----------
+        pipeline_template: str
+            Шаблон пайплайна
+        dag_name: str
+            Сгенерированное имя пайплайна
+        schedule: str
+            Сгенерированное расписание в формате крон
+        start_date: str
+            Сгенерированная дата старта работы пайплайна
+        moving_data_from_source_to_dwh: str
+            Сгенерированная функция перемещения данных из источника в хранилище
+        '''
+        template = Template(pipeline_template)
+
+        dag_code = template.render(dag_name=dag_name,
+                                   schedule=schedule,
+                                   start_date=start_date,
+                                   moving_data_from_source_to_dwh=moving_data_from_source_to_dwh)
         
+        return dag_code
+
+    @staticmethod
+    def _save_code_to_file(code: str, name: str) -> None:
+        '''
+        Сохранение кода в python-скрипт
+
+        Parameters
+        ----------
+        code: str
+            Код пайплайна
+        name: str
+            Имя сохраняемого файла
+        '''
+        
+        output_path = settings.DAGS_DIR / name
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(code)        
