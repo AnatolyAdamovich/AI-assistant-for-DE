@@ -15,6 +15,7 @@ class DbtGenerator:
         self.data_sources = analytics_specification.data_sources
         self.metrics = analytics_specification.metrics
         self.transformations = analytics_specification.transformations
+        self.dwh = analytics_specification.dwh
 
         self.parser = JsonOutputParser()
         self.llm_for_configs = ChatOpenAI(
@@ -123,7 +124,8 @@ class DbtGenerator:
         result = chain.invoke(
             {
                 "stage_models_schema": stage_models_schema,
-                "transformations": self.transformations
+                "transformations": self.transformations,
+                "retention": self.dwh.retention_policy
             }
         )
 
