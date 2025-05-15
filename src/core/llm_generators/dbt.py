@@ -1,4 +1,5 @@
 import yaml
+import re
 from typing import List
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -101,7 +102,9 @@ class DbtGenerator:
         chain = prompt_template | self.llm_for_models | self.parser
                 
         result = chain.invoke(
-            {"sources": sources}
+            {
+                "sources": sources
+            }
         )
 
         return result
@@ -118,8 +121,10 @@ class DbtGenerator:
         chain = prompt_template | self.llm_for_models | self.parser
                 
         result = chain.invoke(
-            {"stage_models_schema": stage_models_schema,
-             "transformations": self.transformations}
+            {
+                "stage_models_schema": stage_models_schema,
+                "transformations": self.transformations
+            }
         )
 
         return result
@@ -136,8 +141,10 @@ class DbtGenerator:
         chain = prompt_template | self.llm_for_models | self.parser
                 
         result = chain.invoke(
-            {"core_models_schema": core_models_schema,
-             "metrics": self.metrics}
+            {
+                "core_models_schema": core_models_schema,
+                "metrics": self.metrics
+            }
         )
 
         return result
