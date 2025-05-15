@@ -176,3 +176,5 @@ cython_debug/
 artifacts/deploy/logs*
 
 to_do*
+
+legacy*
