@@ -265,8 +265,6 @@ class Prompts(BaseModel):
             ...
         ],
         "dwh": {{
-            "database": str, # дефолтно ClickHouse
-            "environment": str, # дефолтно dev
             "limitations": str | null,
             "connection_params": {{ "param": "value", ... }},
             "retention_policy": {{ "layer": "TTL" }} # сколько хранить данные
