@@ -29,15 +29,14 @@ class Settings(BaseSettings):
     LOGS_DIRECTORY: Path = ARTIFACTS_DIRECTORY / "logs"
     DEPLOY_DIR: Path = ARTIFACTS_DIRECTORY / "deploy"
     DAGS_DIR: Path = DEPLOY_DIR / "dags"
-    OUTPUT_DAG_PATH: Path = DAGS_DIR / "pipeline.py"
     DBT_DIR: Path = DEPLOY_DIR / "dbt"
     DBT_MODELS_DIR: Path = DBT_DIR / "models"
 
     # Инфраструктура
-    DOCKER_COMPOSE_PATH: Path = Path("infra") / "docker-compose.yml"
+    DOCKER_COMPOSE_PATH: Path = PROJECT_ROOT / "infra" / "docker-compose.yml"
 
     # TEMPLATES
-    TEMPLATE_DAG_PATH: Path = Path("templates") / "airflow_dag_template.py"
+    TEMPLATE_DAG_PATH: Path = PROJECT_ROOT / "src" / "templates" / "airflow_dag_template.py"
 
     # DBT
     DBT_TARGET: str = "dev"

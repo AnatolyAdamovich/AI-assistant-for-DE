@@ -2,47 +2,86 @@ from pydantic import BaseModel, Field
 
 class Prompts(BaseModel):
     
-    USER_PROMPT_AIRFLOW_ARGS: str = Field(
-        default=
-        """
-        Business process:
-        - name: {name}
-        - schedule: {schedule}
-        """,
-        description="Пользовательский промпт для генерации аргументов Airflow DAG"
-    )
     SYSTEM_PROMPT_AIRFLOW_ARGS: str = Field(
         default=
         """
-        You are an experienced data engineer. Your task is to choose the correct Airflow schedule_interval and start_date for a DAG,
-        based on the following business process and recommendations.
-        Return only the values in Python code format
-        (for example: schedule_interval=\"@daily\"\nstart_date=datetime(2024, 1, 1)).
+        Ты опытный инженер данных, реализующий ELT-пайплайн.
+        Твоя задача - на основе ТЗ описать конфигурацию пайплайна в следующем виде:
+        {{
+            "schedule": "расписание в cron-формате",
+            "start_date": "datetime(year, month, day)",
+            "dag_name": "имя DAG",
+            "catchup": "True или False"
+        }}
+        Требования:
+        1. Формат вывода - строго валидный JSON.
         """,
         description="Системный промпт для генерации аргументов Airflow DAG"
     )
-
-    USER_PROMPT_AIRFLOW_MOVING_DATA: str = Field(
-        default="""
-        Implement a function def moving_data_from_source_to_dwh(**context) -> None for an Airflow DAG.
-        - The data source has the following properties: {data_sources}
-        - For analytics database use ClickHouseHook('clickhouse_dwh')
-        - Use the appropriate Airflow connection for the database type (for example, PostgresHook(\"<name>_source\") for PostgreSQL or ClickHouseHook(\"<name>_source)\" for Clickhouse).
-        - Use only standard and popular open-source Python libraries (such as pandas, psycopg2).
-        - Add a docstring in Russian that describes what the function does.
-        - Import all needed libraries inside function.
-        - Do not add any comments, code or explanations outside the function code.
-        - Return only the function code.
+    USER_PROMPT_AIRFLOW_ARGS: str = Field(
+        default=
+        """
+        Описание бизнес-процесса:\n{business_process}
         """,
-        description="Пользовательский промпт для генерации функции moving_from_source_to_dwh"
+        description="Пользовательский промпт для генерации аргументов Airflow DAG"
     )
+
+
     SYSTEM_PROMPT_AIRFLOW_MOVING_DATA: str = Field(
         default="""
-        You are an experienced Python data engineer writing code for an Airflow DAG. 
-        You should write a function that exports the data from the source and transfers it to the analytical dwh.
+        Ты опытный инженер данных, реализующий Airflow DAG.
+        Твоя задача - написать код для функции, которая будет первым шагом пайплайна.\
+        Функция должна перемещать данные из источника данных в аналитическое хранилище.
+
+        Формат вывода:
+        {{
+            "code": "только python-код функции"
+        }}
+
+        Требования:
+        1. Используй Hooks и Airflow Connections, например: ClickHouseHook('dwh'), PostgresHook('source').
+        2. Используй docstrings для документации (на русском языке)
+        3. Перед загрузкой данных в источник надо удалить прошлую версию DROP IF EXISTS ...
+        4. Импортируй все нужные библиотеки внутри функции
+        5. Используй только популярные open-source библиотеки (например, pandas, requests и т.д.)
+        6. Нужно задействовать все описанные источники данных
+        7. Используй фильтр по дате для извлечения данных, если это возможно (например, с помощью context["ds"], context["data_interval_start"] или других template variables)
+        8. Верни только работающий код функции в строго валидном JSON (оставь название функции moving_from_source_to_dwh)
         """,
         description="Системный промпт для генерации функции moving_from_source_to_dwh"
     )
+    USER_PROMPT_AIRFLOW_MOVING_DATA: str = Field(
+        default="""
+        Описание источников данных:
+        {data_sources}
+
+        Описание аналитической инфраструктуры:
+        {dwh}
+        """,
+        description="Пользовательский промпт для генерации функции moving_from_source_to_dwh"
+    )
+
+    
+    AIRFLOW_MOVING_DATA_EXAMPLE_INPUT: str = Field(
+        default="""
+        Описание источников данных:
+        [DataSource(name='table', description='Таблица', type='database', data_schema={'timestamp': 'timestamp', 'column1': 'int', 'column2': 'float'}, database='PostgreSQL', access_method='SQL-запросы', data_volume=None, limitations=None, recommendations=['извлекать данные за период'], connection_params={})]
+
+        Описание аналитической инфраструктуры:
+        DWH(database='ClickHouse', environment='dev', structure='Medallion', limitations='Ограничения по GDPR', connection_params={}, retention_policy={}
+        """,
+        description="Пример входных данных для генерации функции moving_from_source_to_dwh"
+    )
+
+    AIRFLOW_MOVING_DATA_EXAMPLE_OUTPUT: str = Field(
+        default="""
+        {{
+            "code": "\ndef moving_data_from_source_to_dwh(**context) -> None:\n    \'\'\'\n    Описание\n    \'\'\'\n    from airflow.hooks.postgres_hook import PostgresHook\n    from airflow_clickhouse_plugin.hooks.clickhouse import ClickHouseHook\n\n    # источник данных\n    source = PostgresHook(postgres_conn_id=\'postgres_source\')\n\n    # аналитическое хранилище\n    clickhouse_dwh = ClickHouseHook(clickhouse_conn_id=\'clickhouse_dwh\')\n    ds = context["ds"]\n    # выгрузка данных\n    query = "SELECT column1, column2, timestamp FROM schema.table_name WHERE timestamp::date =" + ds\n    records = source.get_records(records)\n\n    # загрузка данных\n    clickhouse_dwh.execute("DROP TABLE table IF EXISTS")\n    clickhouse_dwh.execute("CREATE TABLE table (column1 ..., column2 ..., )")\n    clickhouse_dwh.execute(\'INSERT INTO table VALUES\', records)"
+        }}
+        """,
+        description="Пример вывода LLM от промпта для генерации функции moving_from_source_to_dwh"
+    )
+
 
     USER_PROMPT_DBT_MODELS_STAGE: str = Field(
         default=
@@ -67,7 +106,7 @@ class Prompts(BaseModel):
     1. SQL-код (вместе с config)
     2. Описание для внесения в schema.yml (включая тесты, если они необходимы)
     
-    Структура вывода (строго в JSON):
+    Структура вывода:
         {{
             "stg_model_name1": "Код dbt-модели",
             "stg_model_name2": "Код dbt-модели",
@@ -81,7 +120,8 @@ class Prompts(BaseModel):
                 ]
             }}
         }}
-    
+    Требования:
+        1. Формат вывода - строго валидный JSON.
     """,
         description="Системный промпт для генерации stage моделей"
     )
@@ -209,7 +249,7 @@ class Prompts(BaseModel):
             {{
             "name": str,
             "description": str,
-            "calculation_method": str, # формула, псевдокод, SQL
+            "calculation_method": str, # формула, псевдокод
             "visualization_method": str,
             "target_value": float,
             "alerting_rules": str
@@ -226,7 +266,7 @@ class Prompts(BaseModel):
         "transformations": [
             {{
             "name": str,
-            "logic": str # псевдокод, SQL, формула
+            "logic": str # псевдокод, формула
             }}
         ]
         }}
@@ -246,10 +286,14 @@ class Prompts(BaseModel):
     SYSTEM_PROMPT_RECOMMENDATION: str = Field(
         default="""
         Ты опытный аналитик данных, проектирующий аналитическую систему на основе технического задания от заказчика.
-        Архитектура аналитического хранилища трёхслойная (stage, core, marts), где на marts будут реализованы метрики, а на core данные будут преобразовываться и обогащаться 
-        (чтобы затем их было легче использовать на слое marts).
+        Архитектура аналитического хранилища трёхслойная (stage, core, marts), где на marts-слое будут реализованы метрики, 
+        а на core-слое данные будут преобразовываться и обогащаться.
         
-        Твоя задача - расширить набор метрик и преобразований, предложенных пользователем, и структурировать их в следующем виде:
+        Твои задачи:
+        1) Расширить набор метрик, предложенных пользователем
+        2) Сформулировать преобразования, которые необходимо выполнить на слое core
+        
+        Cтруктурировать результат надо в следующем виде:
         {{
         "metrics": [
             {{
@@ -272,7 +316,6 @@ class Prompts(BaseModel):
         
         Требования:
         1. Формат вывода - строго валидный JSON.
-        2. Если преобразования не требуются, то оставь transformations пустым
         """,
         description="Системный промпт для генерации рекомендаций"
     )
