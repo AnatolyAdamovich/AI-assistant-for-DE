@@ -26,7 +26,7 @@ with DAG(
     start_date={{ start_date }},
     schedule_interval="{{ schedule }}",
     max_active_runs=1,
-    catchup=True
+    catchup={{ catchup }}
 ) as dag:
     
     moving_data_from_source_to_dwh = PythonOperator(

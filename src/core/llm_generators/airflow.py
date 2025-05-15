@@ -6,7 +6,7 @@
 
 import re
 from jinja2 import Template
-from langchain.prompts import ChatPromptTemplate
+from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import JsonOutputParser
 from src.config.settings import settings
@@ -20,6 +20,7 @@ class AirflowDagGenerator:
         
         self.data_sources = analytics_specification.data_sources
         self.business_process = analytics_specification.business_process
+        self.dwh = analytics_specification.dwh
         
         self.llm_for_moving = ChatOpenAI(
                                 model=settings.LLM_MODEL_FOR_AIRFLOW_MOVING_DATA,
@@ -58,10 +59,47 @@ class AirflowDagGenerator:
 
         chain = prompt_template | self.llm_for_args | self.parser
         
-        # result = chain.invoke(
-        #     {"": }
-        # )
-        # return 
+        result = chain.invoke(
+            {"business_process": self.business_process}
+        )
+
+        return result
+
+    def _generate_moving_data_function(self) -> str:
+        '''
+        Генерация функции для airflow для перемещения данных из источника в хранилище
+        '''
+        system_template = prompts.SYSTEM_PROMPT_AIRFLOW_MOVING_DATA
+        user_template = prompts.USER_PROMPT_AIRFLOW_MOVING_DATA
+
+        example = [
+            {"input": prompts.AIRFLOW_MOVING_DATA_EXAMPLE_INPUT,
+             "output": prompts.AIRFLOW_MOVING_DATA_EXAMPLE_OUTPUT},
+        ]
+        example_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("user", "{input}"),
+                ("ai", "{output}"),
+            ]
+        )
+        few_shot_prompt = FewShotChatMessagePromptTemplate(
+            example_prompt=example_prompt,
+            examples=example,
+        )
+        prompt_template = ChatPromptTemplate.from_messages(
+               [("system", system_template),
+                few_shot_prompt,
+                ("user", user_template)]
+        )
+
+        chain = prompt_template | self.llm_for_moving | self.parser
+        
+        result = chain.invoke(
+            {"data_sources": self.data_sources,
+             "dwh": self.dwh}
+        )
+
+        return result
 
     def _generate_dag_args_legacy(self) -> str:
         
@@ -103,15 +141,13 @@ class AirflowDagGenerator:
         dag_args = self._generate_dag_args()
         moving_function_code = self._generate_moving_data_function()
         
+        arguments = dag_args | moving_function_code
         dag_code = self._render_dag(
             pipeline_template=self.pipeline_template,
-            dag_name=dag_args["dag_name"],
-            start_date=dag_args["start_date"],
-            schedule=dag_args["schedule"],
-            moving_data_from_source_to_dwh=moving_function_code
+            arguments=arguments
         )
 
-        self._save_code_to_file(code=dag_code, name=dag_args["dag_name"])
+        self._save_code_to_file(code=dag_code, name=dag_args["dag_name"] + ".py")
 
     @staticmethod
     def _clean_code(code_str: str) -> str:
@@ -133,11 +169,8 @@ class AirflowDagGenerator:
         return "\n".join([first_line] + indented_lines)
     
     @staticmethod
-    def _render_dag(pipeline_template: str, 
-                    dag_name: str, 
-                    schedule: str, 
-                    start_date: str, 
-                    moving_data_from_source_to_dwh: str) -> str:
+    def _render_dag(pipeline_template: str,
+                    arguments: dict[str, str]) -> str:
         '''
         Функция для рендера: шаблон DAG заполняется значениями, 
         которые сгенерировала LLM
@@ -146,21 +179,16 @@ class AirflowDagGenerator:
         ----------
         pipeline_template: str
             Шаблон пайплайна
-        dag_name: str
-            Сгенерированное имя пайплайна
-        schedule: str
-            Сгенерированное расписание в формате крон
-        start_date: str
-            Сгенерированная дата старта работы пайплайна
-        moving_data_from_source_to_dwh: str
-            Сгенерированная функция перемещения данных из источника в хранилище
+        arguments: dict[str, str]
+            Сгенерированные "детали" пайплайна
         '''
         template = Template(pipeline_template)
 
-        dag_code = template.render(dag_name=dag_name,
-                                   schedule=schedule,
-                                   start_date=start_date,
-                                   moving_data_from_source_to_dwh=moving_data_from_source_to_dwh)
+        dag_code = template.render(dag_name=arguments["dag_name"],
+                                   schedule=arguments["schedule"],
+                                   start_date=arguments["start_date"],
+                                   catchup=arguments["catchup"],
+                                   moving_data_from_source_to_dwh=arguments["code"])
         
         return dag_code
 
@@ -177,6 +205,6 @@ class AirflowDagGenerator:
             Имя сохраняемого файла
         '''
         
-        output_path = settings.DAGS_DIR / name
+        output_path = settings.PROJECT_ROOT / name
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(code)        
