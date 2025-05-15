@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
 
-from airflow.decorators import dag, task
+from airflow.sdk import DAG
+from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
 
 
 PROJECT_DIR = "/opt/airflow/dbt"
 DATA_PATH = f"{PROJECT_DIR}/sample"
-SEED_PATH = f"{PROJECT_DIR}/seeds"
+
 
 DEFAULT_ARGS = {
     "owner": "airflow",
@@ -16,51 +18,49 @@ DEFAULT_ARGS = {
 }
 
 
-@dag(
-    default_args=DEFAULT_ARGS,
+{{ moving_data_from_source_to_dwh }}
+
+
+with DAG(
+    dag_id="{{ dag_name }}", 
+    start_date={{ start_date }},
+    schedule_interval="{{ schedule }}",
     max_active_runs=1,
-    schedule_interval="0 * * * *",
-    start_date=datetime(2025, 1, 1),
     catchup=True
-)
-def airflow_pipeline():
-
-    @task
-    def moving_data_from_source_to_dwh(**context) -> None:
-        pass
-
-    @task.bash
-    def build_staging_models() -> str:
-        bash_command=f"dbt run --profiles-dir {PROJECT_DIR} " \
-                             f"--project-dir {PROJECT_DIR} " \
-                             f"--select tag:stage" \
-                             f"--no-version-check " \
-        
-        return bash_command
+) as dag:
     
-    @task.bash
-    def build_intermediate_models() -> str:
-        bash_command=f"dbt run --profiles-dir {PROJECT_DIR} " \
-                             f"--project-dir {PROJECT_DIR} " \
-                             f"--select tag:intermediate" \
-                             f"--no-version-check " \
-        
-        return bash_command
+    moving_data_from_source_to_dwh = PythonOperator(
+        task_id="moving_data",
+        python_callable=moving_data_from_source_to_dwh
+    )
 
-    @task.bash
-    def build_marts_models() -> str:
+    build_staging_models = BashOperator(
+        task_id="build_staging_models",
         bash_command=f"dbt run --profiles-dir {PROJECT_DIR} " \
                              f"--project-dir {PROJECT_DIR} " \
-                             f"--select tag:marts" \
+                             f"--select tag:stage " \
                              f"--no-version-check " \
-        
-        return bash_command
+    )
+    
+    build_intermediate_models = BashOperator(
+        task_id="build_intermediate_models",
+        bash_command=f"dbt run --profiles-dir {PROJECT_DIR} " \
+                             f"--project-dir {PROJECT_DIR} " \
+                             f"--select tag:core " \
+                             f"--no-version-check " \
+
+    )
+
+    build_marts_models = BashOperator(
+        task_id="build_marts_models",
+        bash_command=f"dbt run --profiles-dir {PROJECT_DIR} " \
+                             f"--project-dir {PROJECT_DIR} " \
+                             f"--select tag:marts " \
+                             f"--no-version-check " \
+    )
   
     # последовательность задач
     moving_data_from_source_to_dwh = moving_data_from_source_to_dwh()
-    build_staging_models = build_staging_models()
-    build_intermediate_models = build_intermediate_models()
-    build_marts_models = build_marts_models()
     
     (
         moving_data_from_source_to_dwh
@@ -68,6 +68,3 @@ def airflow_pipeline():
         >> build_intermediate_models
         >> build_marts_models
     )
-
-
-airflow_pipeline = airflow_pipeline()
