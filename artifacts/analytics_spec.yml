@@ -1,16 +1,14 @@
 business_process:
   name: Анализ продаж интернет-магазина
   description: Анализировать продажи и поведение покупателей для повышения выручки
-    и оптимизации маркетинговых кампаний
   schedule: 0 3 * * *
   roles:
   - role: Менеджеры по продажам
   - role: Маркетологи
-  - role: Продуктовый аналитик
   goals:
   - Повышение выручки
-  - Оптимизация маркетинговых кампаний
-  limitations: Ограничения по GDPR
+  - Анализ поведения покупателей
+  limitations: null
 data_sources:
 - name: orders
   description: Таблица заказов
@@ -23,7 +21,7 @@ data_sources:
     customer_id: int
     amount: float
   access_method: SQL-запросы
-  data_volume: 20000 заказов в день
+  data_volume: Не указано
   limitations: null
   recommendations: []
   connection_params: {}
@@ -37,7 +35,7 @@ data_sources:
     region_id: int
     age: int
   access_method: SQL-запросы
-  data_volume: 250000 клиентов
+  data_volume: Не указано
   limitations: null
   recommendations: []
   connection_params: {}
@@ -48,28 +46,20 @@ metrics:
   visualization_method: График
   target_value: null
   alerting_rules: null
-- name: Сумма продаж по регионам
-  description: Сумма продаж по регионам
-  calculation_method: SUM(amount) GROUP BY region_id
+- name: Количество уникальных покупателей по регионам
+  description: Количество уникальных клиентов по регионам
+  calculation_method: COUNT(DISTINCT customer_id) по region_id
   visualization_method: Диаграмма
   target_value: null
   alerting_rules: null
-- name: Количество уникальных покупателей по регионам
-  description: Количество уникальных покупателей по регионам
-  calculation_method: COUNT(DISTINCT customer_id) GROUP BY region_id
-  visualization_method: Таблица
-  target_value: null
-  alerting_rules: null
 - name: Средний чек
-  description: Средний чек по продажам
+  description: Средняя сумма заказа
   calculation_method: AVG(amount)
   visualization_method: График
   target_value: null
   alerting_rules: null
 dwh:
-  database: PostgreSQL
-  environment: dev
-  limitations: Ограничения по GDPR
+  limitations: null
   connection_params: {}
   retention_policy: {}
 transformations: []

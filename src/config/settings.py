@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
     ARTIFACTS_DIRECTORY: Path = PROJECT_ROOT / "artifacts"
     LOGS_DIRECTORY: Path = ARTIFACTS_DIRECTORY / "logs"
-    DEPLOY_DIR: Path = ARTIFACTS_DIRECTORY / "deploy"
+    DEPLOY_DIR: Path = ARTIFACTS_DIRECTORY / "deploy_test"
     DAGS_DIR: Path = DEPLOY_DIR / "dags"
     DBT_DIR: Path = DEPLOY_DIR / "dbt"
     DBT_MODELS_DIR: Path = DBT_DIR / "models"
