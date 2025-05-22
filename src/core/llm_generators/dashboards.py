@@ -1,13 +1,15 @@
 import requests
+import logging
 from typing import Any
-from jinja2 import Template
-
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import JsonOutputParser
 from src.config.settings import settings
 from src.config.prompts import prompts
-from src.core.models.analytics import AnalyticsSpec
+from src.core.models.analytics import Metric
+
+
+logger = logging.getLogger(name="DASHBOARD")
 
 class MetabaseDashboardGenerator:
     def __init__(self, metabase_url: str, username: str, password: str):
@@ -28,6 +30,18 @@ class MetabaseDashboardGenerator:
         self.password = password
         self.session_id = self._authenticate()
 
+        self.llm = ChatOpenAI(
+            model=settings.LLM_MODEL_FOR_METABASE,
+            temperature=settings.TEMPERATURE_METABASE,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            api_key=settings.OPENAI_API_KEY,
+            base_url=settings.BASE_URL
+        )
+        
+        self.parser = JsonOutputParser()
+
     def _authenticate(self) -> str:
         '''
         Аутентификация
@@ -38,6 +52,8 @@ class MetabaseDashboardGenerator:
             "password": self.password
         })
         response.raise_for_status()
+        logger.info("Аутентификация в Metabase прошла успешно!")
+
         return response.json()['id']
     
     def _headers(self) -> dict[str, str]:
@@ -70,6 +86,8 @@ class MetabaseDashboardGenerator:
         }
         response = requests.post(url, json=payload, headers=self._headers())
         response.raise_for_status()
+        logger.info(f"Карточка '{name}' создана!")
+
         return response.json()['id']
 
     def get_dashboard_data(self, dashboard_id: int) -> dict:
@@ -108,6 +126,8 @@ class MetabaseDashboardGenerator:
         }
         response = requests.post(url, json=payload, headers=self._headers())
         response.raise_for_status()
+        logger.info(f"Дашборд '{name}' создан!")
+
         return response.json()['id']
     
     def add_cards_to_dashboard(self, dashboard_id: int, cards_ids: list[dict[str, Any]]) -> int:
@@ -119,11 +139,11 @@ class MetabaseDashboardGenerator:
         cards_ids: list[dict[str, Any]]
             Массив с описанием карточек 
         '''
-        dashboard_data = self.get_dashboard(dashboard_id)
+        dashboard_data = self.get_dashboard_data(dashboard_id)
 
-        N_dashcards_per_row = 3
-        size_x = 4
-        size_y = 3
+        N_dashcards_per_row = 2
+        size_x = 12
+        size_y = 7
 
         for i, card_id in enumerate(cards_ids):
             new_dashcard = {
@@ -137,8 +157,67 @@ class MetabaseDashboardGenerator:
                 "parameter_mappings": []
             }
             dashboard_data["dashcards"].append(new_dashcard)
+            logger.info(f"Карточка №{card_id} добавлена на дашборд №{dashboard_id}")
         
         url = f"{self.metabase_url}/api/dashboard/{dashboard_id}"
         response = requests.put(url, json=dashboard_data, headers=self._headers())
         response.raise_for_status()
         return response.json()
+    
+    def generate_cards_data(self, marts_schema: dict[str, Any], metrics: list[dict[Metric]]) -> dict[str, Any]:
+        '''
+        Генерация payload для карточек в Metabase на основе описания схемы витрин и метрик
+
+        Parameters
+        ----------
+        marts_schema: dict[str, Any]
+            Описание структуры marts-слоя в DWH
+        metrics: list[Metrics]
+            Метрики согласно извлечённому ТЗ (см. src.core.models.analytic.Metrics)
+        '''
+        system_template = prompts.SYSTEM_PROMPT_METABASE_DASHBOARD
+        user_template = prompts.USER_PROMPT_METABASE_DASHBOARD
+        
+        prompt_template = ChatPromptTemplate.from_messages(
+               [("system", system_template),
+                ("user", user_template)]
+        )
+
+        chain = prompt_template | self.llm | self.parser
+        result = chain.invoke(
+            {
+                "metrics": metrics,
+                "marts": marts_schema
+            }
+        )
+        logger.info(f'Сгенерированы настройки для {len(result)} карточек')
+        return result
+    
+    def generate_dashboard(self, marts_schema: dict[str, Any], metrics: list[dict[Metric]]):
+        '''
+        Генерация дашборда с нужными графиками
+
+        Parameters
+        ----------
+        '''
+        # генерация настроек для карточек
+        cards_data = self.generate_cards_data(marts_schema=marts_schema, 
+                                              metrics=metrics)
+
+        # создание карточек
+        cards_ids = []
+        for card_name, card_data in cards_data.items():
+            new_card_id = self.create_card(name=card_name, 
+                                           visualization_settings=card_data['visualization_settings'],
+                                           query=card_data['query'],
+                                           display=card_data['display'])
+            cards_ids.append(new_card_id)
+        
+        # создание дашборда
+        dashboard_id = self.create_dashboard(name="Analytics Dashboard")
+        
+        # добавление карточек на дашборд
+        self.add_cards_to_dashboard(dashboard_id=dashboard_id,
+                                    cards_ids=cards_ids)
+        
+        logger.info("Аналитический дашборд готов к использованию!")
