@@ -21,7 +21,9 @@ class Settings(BaseSettings):
 
     LLM_MODEL_FOR_ANALYTICS_SPEC: str = "just-ai/gigachat/GigaChat-2-Pro"
     TEMPERATURE_ANALYTICS_SPEC: float = 0.5
-
+    
+    LLM_MODEL_FOR_METABASE: str = "just-ai/deepseek/deepseek-r1"
+    TEMPERATURE_METABASE: float = 0.5
 
     # Пути к директориям для генерации и сохранения файлов файлов
     PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
@@ -54,6 +56,12 @@ class Settings(BaseSettings):
     DWH_SCHEMA: str = Field(..., env="DWH_SCHEMA")
     DWH_THREADS: int = Field(..., env="DWH_THREADS")
     
+    # BI
+    METABASE_URL: str = Field(..., env="METABASE_URL")
+    METABASE_USERNAME: str = Field(..., env="METABASE_USERNAME")
+    METABASE_PASSWORD: str = Field(..., env="METABASE_PASSWORD")
+
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
