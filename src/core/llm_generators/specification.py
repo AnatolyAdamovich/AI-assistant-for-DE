@@ -24,7 +24,8 @@ class AnalyticsSpecGenerator:
         self.parser = JsonOutputParser()
 
     def extract_info_from_users_desription(self, 
-                                           user_description: str) -> AnalyticsSpec:
+                                           user_description: str,
+                                           with_reccomendations: bool = True) -> AnalyticsSpec:
         '''
         Извлечь данные в структурированном виде (см. src.models.analytics) 
         из пользовательского описания на естественном языке.
@@ -48,7 +49,10 @@ class AnalyticsSpecGenerator:
             {"user_description": user_description}
         )
         logger.info("ТЗ извлечено из пользовательского описания")
-
+        
+        if with_reccomendations:
+            recommendations = self.recommendations()
+            result.update(recommendations)
         # сохранение в файл
         deployment_path = settings.ARTIFACTS_DIRECTORY / "analytics_spec.yml"
         self._save_dict_to_yml(content=result, filepath=deployment_path)
