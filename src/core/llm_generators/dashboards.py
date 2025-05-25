@@ -226,4 +226,4 @@ class MetabaseDashboardGenerator:
         self.add_cards_to_dashboard(dashboard_id=dashboard_id,
                                     cards_ids=cards_ids)
         
-        logger.info("Аналитический дашборд готов к использованию!")
+        logger.info("Аналитический дашборд готов к использованию")
