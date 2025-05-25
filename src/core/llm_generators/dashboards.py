@@ -1,8 +1,10 @@
 import requests
 import logging
+import time
 from typing import Any
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain.callbacks import get_openai_callback
 from langchain_core.output_parsers import JsonOutputParser
 from src.config.settings import settings
 from src.config.prompts import prompts
@@ -12,7 +14,8 @@ from src.core.models.analytics import Metric
 logger = logging.getLogger(name="DASHBOARD")
 
 class MetabaseDashboardGenerator:
-    def __init__(self, metabase_url: str, username: str, password: str):
+    def __init__(self, metabase_url: str, username: str, password: str,
+                 with_metrics: bool = False):
         '''
         Инициализация объекта
         
@@ -41,6 +44,8 @@ class MetabaseDashboardGenerator:
         )
         
         self.parser = JsonOutputParser()
+        
+        logger.info(f"Используется {self.llm.model_name} с температурой {self.llm.temperature}")
 
     def _authenticate(self) -> str:
         '''
@@ -190,12 +195,35 @@ class MetabaseDashboardGenerator:
         )
 
         chain = prompt_template | self.llm | self.parser
-        result = chain.invoke(
-            {
-                "metrics": metrics,
-                "marts_models_schema": marts_schema
-            }
-        )
+
+        if self.with_metrics:
+            with get_openai_callback() as cb:
+                start_time = time.time()
+                result = chain.invoke(
+                    {
+                        "metrics": metrics,
+                        "marts_models_schema": marts_schema
+                    }
+                )
+                end_time = time.time()
+                generation_time = end_time - start_time
+                total_tokens = cb.total_tokens
+                prompt_tokens = cb.prompt_tokens
+                completion_tokens = cb.completion_tokens
+                total_cost = cb.total_cost
+
+                logger.info(
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
+                )
+        else:
+            result = chain.invoke(
+                {
+                    "metrics": metrics,
+                    "marts_models_schema": marts_schema
+                }
+            )
+
         logger.info(f'Сгенерированы настройки для {len(result)} карточек')
         return result
     
