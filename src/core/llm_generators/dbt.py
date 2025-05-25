@@ -2,10 +2,12 @@ import os
 import yaml
 import re
 import logging
+import time
 from typing import List
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_openai import ChatOpenAI
+from langchain.callbacks import get_openai_callback
 from src.config.settings import settings
 from src.config.prompts import prompts
 from src.core.models.analytics import AnalyticsSpec
@@ -14,8 +16,11 @@ from src.core.models.analytics import AnalyticsSpec
 logger = logging.getLogger(name="DBT")
 
 class DbtGenerator:
-    def __init__(self, analytics_specification: AnalyticsSpec):
+    def __init__(self, analytics_specification: AnalyticsSpec,
+                 with_metrics: bool = False):
         
+        self.with_metrics = with_metrics
+
         self.data_sources = analytics_specification.data_sources
         self.metrics = analytics_specification.metrics
         self.transformations = analytics_specification.transformations
@@ -40,6 +45,7 @@ class DbtGenerator:
                                 api_key=settings.OPENAI_API_KEY,
                                 base_url=settings.BASE_URL
                             )
+        logger.info(f"Используется {self.llm_for_models.model_name} с температурой {self.llm_for_models.temperature}")
     
     def _generate_profiles(self) -> dict:
         '''
@@ -107,12 +113,32 @@ class DbtGenerator:
         )
 
         chain = prompt_template | self.llm_for_models | self.parser
-                
-        result = chain.invoke(
-            {
-                "sources": sources
-            }
-        )
+        if self.with_metrics:
+            with get_openai_callback() as cb:
+                start_time = time.time()
+                result = chain.invoke(
+                    {
+                        "sources": sources
+                    }
+                )
+                end_time = time.time()
+                generation_time = end_time - start_time
+                total_tokens = cb.total_tokens
+                prompt_tokens = cb.prompt_tokens
+                completion_tokens = cb.completion_tokens
+                total_cost = cb.total_cost
+
+                logger.info(
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
+                )
+        else:
+            result = chain.invoke(
+                {
+                    "sources": sources
+                }
+            )
+        
         logging.info("Stage-модели сгенерированы")
         return result
 
@@ -126,14 +152,38 @@ class DbtGenerator:
         )
 
         chain = prompt_template | self.llm_for_models | self.parser
-                
-        result = chain.invoke(
-            {
-                "stage_models_schema": stage_models_schema,
-                "transformations": self.transformations,
-                "retention": self.dwh.retention_policy
-            }
-        )
+
+        if self.with_metrics:
+            with get_openai_callback() as cb:
+                start_time = time.time()
+                result = chain.invoke(
+                    {
+                        "stage_models_schema": stage_models_schema,
+                        "transformations": self.transformations,
+                        "retention": self.dwh.retention_policy
+                    }
+                )
+                end_time = time.time()
+                generation_time = end_time - start_time
+                total_tokens = cb.total_tokens
+                prompt_tokens = cb.prompt_tokens
+                completion_tokens = cb.completion_tokens
+                total_cost = cb.total_cost
+
+                logger.info(
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
+                )
+        else:
+            result = chain.invoke(
+                {
+                    "stage_models_schema": stage_models_schema,
+                    "transformations": self.transformations,
+                    "retention": self.dwh.retention_policy
+                }
+            )
+
+
         logging.info("Core-модели сгенерированы")
         return result
 
@@ -147,13 +197,35 @@ class DbtGenerator:
         )
 
         chain = prompt_template | self.llm_for_models | self.parser
-                
-        result = chain.invoke(
-            {
-                "core_models_schema": core_models_schema,
-                "metrics": self.metrics
-            }
-        )
+        
+        if self.with_metrics:
+            with get_openai_callback() as cb:
+                start_time = time.time()
+                result = chain.invoke(
+                    {
+                        "core_models_schema": core_models_schema,
+                        "metrics": self.metrics
+                    }
+                )
+                end_time = time.time()
+                generation_time = end_time - start_time
+                total_tokens = cb.total_tokens
+                prompt_tokens = cb.prompt_tokens
+                completion_tokens = cb.completion_tokens
+                total_cost = cb.total_cost
+
+                logger.info(
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
+                )
+        else:
+            result = chain.invoke(
+                {
+                    "core_models_schema": core_models_schema,
+                    "metrics": self.metrics
+                }
+            )
+        
         logging.info("Marts-модели сгенерированы")
 
         return result
