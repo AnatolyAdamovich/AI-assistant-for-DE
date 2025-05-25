@@ -1,5 +1,6 @@
 import yaml
 import re
+import logging
 from typing import List
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -8,6 +9,8 @@ from src.config.settings import settings
 from src.config.prompts import prompts
 from src.core.models.analytics import AnalyticsSpec
 
+
+logger = logging.getLogger(name="DBT")
 
 class DbtGenerator:
     def __init__(self, analytics_specification: AnalyticsSpec):
@@ -58,6 +61,7 @@ class DbtGenerator:
                 }
             }
         }
+        logging.info("profiles.yml сгенерирован")
 
         return profiles
 
@@ -88,7 +92,8 @@ class DbtGenerator:
                     for key, data_type in ds.data_schema.items()]
             }
             sources['sources'][0]['tables'].append(table_dict)
-                            
+        
+        logging.info("sources.yml сгенерирован")
         return sources
 
     def _generate_stage_models(self, sources: dict) -> dict:
@@ -107,7 +112,7 @@ class DbtGenerator:
                 "sources": sources
             }
         )
-
+        logging.info("Stage-модели сгенерированы")
         return result
 
     def _generate_intermediate_models(self, stage_models_schema) -> List[str]:
@@ -128,7 +133,7 @@ class DbtGenerator:
                 "retention": self.dwh.retention_policy
             }
         )
-
+        logging.info("Core-модели сгенерированы")
         return result
 
     def _generate_marts(self, core_models_schema):
@@ -148,6 +153,7 @@ class DbtGenerator:
                 "metrics": self.metrics
             }
         )
+        logging.info("Marts-модели сгенерированы")
 
         return result
 
@@ -194,16 +200,19 @@ class DbtGenerator:
     def _save_yml_from_str(content: str, file_path: str) -> None:
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
+        logger.info(f"Файл сохранен {file_path}")
     
     @staticmethod
     def _save_yml_from_dict(content: dict, file_path: str) -> None:
         with open(file_path, 'w', encoding='utf-8') as f:
             yaml.dump(content, f, sort_keys=False, allow_unicode=True)
+        logger.info(f"Файл сохранен {file_path}")
     
     @staticmethod
     def _save_sql_model(content: str, file_path: str) -> None:
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
+        logger.info(f"Файл сохранен {file_path}")
     
     @staticmethod
     def _clean_sql_code(code_str: str) -> str:
