@@ -1,9 +1,11 @@
 import os
 import logging
 import re
+import time
 from jinja2 import Template
 from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain.callbacks import get_openai_callback
 from langchain_core.output_parsers import JsonOutputParser
 from src.config.settings import settings
 from src.config.prompts import prompts
@@ -15,8 +17,11 @@ logger = logging.getLogger(name="AIRFLOW")
 class AirflowDagGenerator:
     def __init__(self, analytics_specification: AnalyticsSpec,
                  template_path: str = settings.TEMPLATE_DAG_PATH,
-                 requirements_path: str = settings.REQUIREMENTS_PATH):
+                 requirements_path: str = settings.REQUIREMENTS_PATH,
+                 with_metrics: bool = False):
         
+        self.with_metrics = with_metrics
+
         self.data_sources = analytics_specification.data_sources
         self.business_process = analytics_specification.business_process
         self.dwh = analytics_specification.dwh
@@ -41,11 +46,15 @@ class AirflowDagGenerator:
                             )
         self.parser = JsonOutputParser()
         
+        logger.info(f"Для аргументов используется {self.llm_for_args.model_name} с температурой {self.llm_for_args.temperature}")
+        logger.info(f"Для функции используется {self.llm_for_moving.model_name} с температурой {self.llm_for_moving.temperature}")
+
         with open(template_path, "r", encoding="utf-8") as f:
             self.pipeline_template = f.read()
         
         with open(requirements_path, "r", encoding="utf-8") as f:
             self.requirements = f.read()
+        
          
     def _generate_dag_args(self) -> dict[str, str]:
         '''
@@ -61,9 +70,32 @@ class AirflowDagGenerator:
 
         chain = prompt_template | self.llm_for_args | self.parser
         
-        result = chain.invoke(
-            {"business_process": self.business_process}
-        )
+        if self.with_metrics:
+            with get_openai_callback() as cb:
+                start_time = time.time()
+                result = chain.invoke(
+                    {
+                        "business_process": self.business_process
+                    }
+                )
+                end_time = time.time()
+                generation_time = end_time - start_time
+                total_tokens = cb.total_tokens
+                prompt_tokens = cb.prompt_tokens
+                completion_tokens = cb.completion_tokens
+                total_cost = cb.total_cost
+
+                logger.info(
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
+                )
+        else:
+            result = chain.invoke(
+                {
+                    "business_process": self.business_process
+                }
+            )
+
         logger.info("Аргументы для DAG сгенерированы")
         return result
 
@@ -96,13 +128,35 @@ class AirflowDagGenerator:
 
         chain = prompt_template | self.llm_for_moving | self.parser
         
-        result = chain.invoke(
-            {
-                "data_sources": self.data_sources,
-                "dwh": self.dwh,
-                "requirements": self.requirements
-            }
-        )
+        if self.with_metrics:
+            with get_openai_callback() as cb:
+                start_time = time.time()
+                result = chain.invoke(
+                    {
+                        "data_sources": self.data_sources,
+                        "dwh": self.dwh,
+                        "requirements": self.requirements
+                    }
+                )
+                end_time = time.time()
+                generation_time = end_time - start_time
+                total_tokens = cb.total_tokens
+                prompt_tokens = cb.prompt_tokens
+                completion_tokens = cb.completion_tokens
+                total_cost = cb.total_cost
+
+                logger.info(
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
+                )
+        else:
+            result = chain.invoke(
+                {
+                    "data_sources": self.data_sources,
+                    "dwh": self.dwh,
+                    "requirements": self.requirements
+                }
+            )
 
         logger.info("Функция moving_data_from_source_to_dwh сгенерирована")
         return result
