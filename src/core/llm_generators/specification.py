@@ -1,4 +1,5 @@
 import yaml
+import logging
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_openai import ChatOpenAI
@@ -6,6 +7,7 @@ from src.config.settings import settings
 from src.config.prompts import prompts
 from src.core.models.analytics import DataSource, Metric, Transformation, BusinessProcess, DWH, AnalyticsSpec
 
+logger = logging.getLogger(name="SPECIFICATION")
 
 class AnalyticsSpecGenerator:
     def __init__(self):
@@ -45,6 +47,7 @@ class AnalyticsSpecGenerator:
         result = chain.invoke(
             {"user_description": user_description}
         )
+        logger.info("ТЗ извлечено из пользовательского описания")
 
         # сохранение в файл
         deployment_path = settings.ARTIFACTS_DIRECTORY / "analytics_spec.yml"
@@ -119,6 +122,7 @@ class AnalyticsSpecGenerator:
              "metrics": metrics}
         )
 
+        logger.info("Сгенерированы рекомендации")
         return result
 
     @staticmethod
@@ -143,6 +147,7 @@ class AnalyticsSpecGenerator:
                              dwh=dwh,
                              transformations=transformations)
         
+        logger.info(f"Объект AnalyticsSpec загружен из словаря")
         return spec
 
     @staticmethod
@@ -159,6 +164,7 @@ class AnalyticsSpecGenerator:
             data_from_file = yaml.safe_load(f)
         spec = AnalyticsSpec(**data_from_file)
         
+        logger.info(f"Объект AnalyticsSpec загружен из файла {filepath}")
         return spec
     
     @staticmethod
@@ -176,3 +182,5 @@ class AnalyticsSpecGenerator:
         
         with open(filepath, "w", encoding="utf-8") as f:
             yaml.dump(content, f, allow_unicode=True, sort_keys=False)
+        
+        logger.info(f'Извлеченное ТЗ сохранено в {filepath}')
