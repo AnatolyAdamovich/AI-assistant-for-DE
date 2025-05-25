@@ -80,9 +80,15 @@ class MetabaseDashboardGenerator:
         url = f"{self.metabase_url}/api/card"
         payload = {
             "name": name,
-            "dataset_query": query,
             "display": display,
-            "visualization_settings": visualization_settings
+            "visualization_settings": visualization_settings,
+            "dataset_query": {
+                "type": "native",
+                "native": {
+                    "query": query
+                },
+                "database": 2
+            }
         }
         response = requests.post(url, json=payload, headers=self._headers())
         response.raise_for_status()
@@ -187,7 +193,7 @@ class MetabaseDashboardGenerator:
         result = chain.invoke(
             {
                 "metrics": metrics,
-                "marts": marts_schema
+                "marts_models_schema": marts_schema
             }
         )
         logger.info(f'Сгенерированы настройки для {len(result)} карточек')
