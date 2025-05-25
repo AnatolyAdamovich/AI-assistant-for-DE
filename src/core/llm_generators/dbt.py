@@ -1,3 +1,4 @@
+import os
 import yaml
 import re
 import logging
@@ -198,18 +199,30 @@ class DbtGenerator:
             
     @staticmethod
     def _save_yml_from_str(content: str, file_path: str) -> None:
+        dir_path = os.path.dirname(file_path)
+        if dir_path and not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
         logger.info(f"Файл сохранен {file_path}")
     
     @staticmethod
     def _save_yml_from_dict(content: dict, file_path: str) -> None:
+        dir_path = os.path.dirname(file_path)
+        if dir_path and not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
         with open(file_path, 'w', encoding='utf-8') as f:
             yaml.dump(content, f, sort_keys=False, allow_unicode=True)
         logger.info(f"Файл сохранен {file_path}")
     
     @staticmethod
     def _save_sql_model(content: str, file_path: str) -> None:
+        dir_path = os.path.dirname(file_path)
+        if dir_path and not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
         logger.info(f"Файл сохранен {file_path}")

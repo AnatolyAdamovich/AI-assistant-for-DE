@@ -1,3 +1,4 @@
+import os
 import yaml
 import logging
 from langchain.prompts import ChatPromptTemplate
@@ -48,18 +49,21 @@ class AnalyticsSpecGenerator:
         result = chain.invoke(
             {"user_description": user_description}
         )
-        logger.info("ТЗ извлечено из пользовательского описания")
         
-        if with_reccomendations:
-            recommendations = self.recommendations()
-            result.update(recommendations)
-        # сохранение в файл
-        deployment_path = settings.ARTIFACTS_DIRECTORY / "analytics_spec.yml"
-        self._save_dict_to_yml(content=result, filepath=deployment_path)
-
+        logger.info("ТЗ извлечено из пользовательского описания")
         # парсинг в объект класса AnalyticsSpec
         spec = self._from_dict_to_analytics_spec(result)
 
+        if with_reccomendations:
+            recommendations = self.recommendations(metrics=spec.metrics,
+                                                   business_process=spec.business_process,
+                                                   transformations=spec.transformations)
+            result.update(recommendations)
+            spec = self._from_dict_to_analytics_spec(result)
+        # сохранение в файл
+        deployment_path = settings.ARTIFACTS_DIRECTORY / "analytics_spec.yml"
+        self._save_dict_to_yml(content=result, filepath=deployment_path)
+    
         return spec
     
     def extract_info_from_users_answers(self, 
@@ -183,7 +187,10 @@ class AnalyticsSpecGenerator:
         filepath: str
             Путь для сохранения
         '''
-        
+        dir_path = os.path.dirname(filepath)
+        if dir_path and not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
         with open(filepath, "w", encoding="utf-8") as f:
             yaml.dump(content, f, allow_unicode=True, sort_keys=False)
         

@@ -1,3 +1,4 @@
+import os
 import logging
 import re
 from jinja2 import Template
@@ -210,6 +211,9 @@ class AirflowDagGenerator:
             Имя сохраняемого файла
         '''
         
+        if not os.path.exists(settings.DAGS_DIR):
+            os.makedirs(settings.DAGS_DIR)
+
         output_path = settings.DAGS_DIR / name
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(code)        
