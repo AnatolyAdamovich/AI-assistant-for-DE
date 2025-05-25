@@ -1,9 +1,11 @@
 import os
 import yaml
 import logging
+import time
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_openai import ChatOpenAI
+from langchain.callbacks import get_openai_callback
 from src.config.settings import settings
 from src.config.prompts import prompts
 from src.core.models.analytics import DataSource, Metric, Transformation, BusinessProcess, DWH, AnalyticsSpec
@@ -11,7 +13,9 @@ from src.core.models.analytics import DataSource, Metric, Transformation, Busine
 logger = logging.getLogger(name="SPECIFICATION")
 
 class AnalyticsSpecGenerator:
-    def __init__(self):
+    def __init__(self, with_metrics: bool = False):
+        
+        self.with_metrics = with_metrics
         self.llm = ChatOpenAI(
             model=settings.LLM_MODEL_FOR_ANALYTICS_SPEC,
             temperature=settings.TEMPERATURE_ANALYTICS_SPEC,
@@ -21,8 +25,9 @@ class AnalyticsSpecGenerator:
             api_key=settings.OPENAI_API_KEY,
             base_url=settings.BASE_URL
         )
-        
         self.parser = JsonOutputParser()
+        logger.info(f"Используется {self.llm.model_name} с температурой {self.llm.temperature}")
+        
 
     def extract_info_from_users_desription(self, 
                                            user_description: str,
@@ -46,9 +51,31 @@ class AnalyticsSpecGenerator:
 
         chain = prompt_template | self.llm | self.parser
         
-        result = chain.invoke(
-            {"user_description": user_description}
-        )
+        if self.with_metrics:
+            with get_openai_callback() as cb:
+                start_time = time.time()
+                result = chain.invoke(
+                    {
+                        "user_description": user_description
+                    }
+                )
+                end_time = time.time()
+                generation_time = end_time - start_time
+                total_tokens = cb.total_tokens
+                prompt_tokens = cb.prompt_tokens
+                completion_tokens = cb.completion_tokens
+                total_cost = cb.total_cost
+
+                logger.info(
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
+                )
+        else:
+            result = chain.invoke(
+                    {
+                        "user_description": user_description
+                    }
+            )
         
         logger.info("ТЗ извлечено из пользовательского описания")
         # парсинг в объект класса AnalyticsSpec
@@ -60,6 +87,7 @@ class AnalyticsSpecGenerator:
                                                    transformations=spec.transformations)
             result.update(recommendations)
             spec = self._from_dict_to_analytics_spec(result)
+        
         # сохранение в файл
         deployment_path = settings.ARTIFACTS_DIRECTORY / "analytics_spec.yml"
         self._save_dict_to_yml(content=result, filepath=deployment_path)
@@ -123,12 +151,35 @@ class AnalyticsSpecGenerator:
         )
 
         chain = prompt_template | self.llm | self.parser
-        
-        result = chain.invoke(
-            {"business_process": business_process,
-             "transformations": transformations,
-             "metrics": metrics}
-        )
+        if self.with_metrics:
+            with get_openai_callback() as cb:
+                start_time = time.time()
+                result = chain.invoke(
+                    {
+                        "business_process": business_process,
+                        "transformations": transformations,
+                        "metrics": metrics
+                    }
+                ) 
+                end_time = time.time()
+                generation_time = end_time - start_time
+                total_tokens = cb.total_tokens
+                prompt_tokens = cb.prompt_tokens
+                completion_tokens = cb.completion_tokens
+                total_cost = cb.total_cost
+
+                logger.info(
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
+                )
+        else:
+            result = chain.invoke(
+                {
+                    "business_process": business_process,
+                    "transformations": transformations,
+                    "metrics": metrics
+                }
+            )   
 
         logger.info("Сгенерированы рекомендации")
         return result
