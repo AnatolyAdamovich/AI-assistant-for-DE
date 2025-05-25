@@ -1,9 +1,4 @@
-## TO DO: вынести промпты в другое место
-## TO DO: адаптировать под множественный источник   
-## TO DO: рассмотреть использование string.Template
-## TO DO: обогатить класс
-## TO DO: добавить docstrings
-
+import logging
 import re
 from jinja2 import Template
 from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
@@ -13,6 +8,8 @@ from src.config.settings import settings
 from src.config.prompts import prompts
 from src.core.models.analytics import AnalyticsSpec
 
+
+logger = logging.getLogger(name="AIRFLOW")
 
 class AirflowDagGenerator:
     def __init__(self, analytics_specification: AnalyticsSpec,
@@ -66,7 +63,7 @@ class AirflowDagGenerator:
         result = chain.invoke(
             {"business_process": self.business_process}
         )
-
+        logger.info("Аргументы для DAG сгенерированы")
         return result
 
     def _generate_moving_data_function(self) -> str:
@@ -106,6 +103,7 @@ class AirflowDagGenerator:
             }
         )
 
+        logger.info("Функция moving_data_from_source_to_dwh сгенерирована")
         return result
 
     def _generate_dag_args_legacy(self) -> str:
@@ -153,7 +151,7 @@ class AirflowDagGenerator:
             pipeline_template=self.pipeline_template,
             arguments=arguments
         )
-
+        logger.info("Шаблон DAG заполнен")
         self._save_code_to_file(code=dag_code, name=dag_args["dag_name"] + ".py")
 
     @staticmethod
@@ -215,3 +213,4 @@ class AirflowDagGenerator:
         output_path = settings.DAGS_DIR / name
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(code)        
+        logger.info(f"DAG сохранен в {output_path}")
