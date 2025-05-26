@@ -16,8 +16,11 @@ from src.core.models.analytics import AnalyticsSpec
 logger = logging.getLogger(name="DBT")
 
 class DbtGenerator:
-    def __init__(self, analytics_specification: AnalyticsSpec,
-                 with_metrics: bool = False):
+    def __init__(self, 
+                 analytics_specification: AnalyticsSpec,
+                 with_metrics: bool = False,
+                 model: str = settings.LLM_MODEL_FOR_DBT_MODEL,
+                 temperature: float = settings.TEMPERATURE_DBT_MODEL):
         
         self.with_metrics = with_metrics
 
@@ -27,18 +30,10 @@ class DbtGenerator:
         self.dwh = analytics_specification.dwh
 
         self.parser = JsonOutputParser()
-        self.llm_for_configs = ChatOpenAI(
-                                model=settings.LLM_MODEL_FOR_DBT_CONFIG,
-                                temperature=settings.TEMPERATURE_DBT_CONFIG,
-                                max_tokens=None,
-                                timeout=None,
-                                max_retries=2,
-                                api_key=settings.OPENAI_API_KEY,
-                                base_url=settings.BASE_URL
-                            )
+        
         self.llm_for_models = ChatOpenAI(
-                                model=settings.LLM_MODEL_FOR_DBT_MODEL,
-                                temperature=settings.TEMPERATURE_DBT_MODEL,
+                                model=model,
+                                temperature=temperature,
                                 max_tokens=None,
                                 timeout=None,
                                 max_retries=2,
@@ -123,13 +118,16 @@ class DbtGenerator:
                 )
                 end_time = time.time()
                 generation_time = end_time - start_time
+                
                 total_tokens = cb.total_tokens
                 prompt_tokens = cb.prompt_tokens
                 completion_tokens = cb.completion_tokens
-                total_cost = cb.total_cost
+                
+                total_cost = self._count_cost(prompt_tokens, completion_tokens,
+                                              self.llm_for_models.model_name)
 
                 logger.info(
-                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=%.3f ₽; Время=%.2f сек",
                     total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
                 )
         else:
@@ -141,7 +139,7 @@ class DbtGenerator:
         
         logging.info("Stage-модели сгенерированы")
         return result
-
+    
     def _generate_intermediate_models(self, stage_models_schema) -> List[str]:
         system_template = prompts.SYSTEM_PROMPT_DBT_MODELS_CORE
         user_template = prompts.USER_PROMPT_DBT_MODELS_CORE
@@ -168,10 +166,12 @@ class DbtGenerator:
                 total_tokens = cb.total_tokens
                 prompt_tokens = cb.prompt_tokens
                 completion_tokens = cb.completion_tokens
-                total_cost = cb.total_cost
-
+                
+                total_cost = self._count_cost(prompt_tokens, completion_tokens,
+                                              self.llm_for_models.model_name)
+                
                 logger.info(
-                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=%.3f ₽; Время=%.2f сек",
                     total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
                 )
         else:
@@ -212,10 +212,12 @@ class DbtGenerator:
                 total_tokens = cb.total_tokens
                 prompt_tokens = cb.prompt_tokens
                 completion_tokens = cb.completion_tokens
-                total_cost = cb.total_cost
+                
+                total_cost = self._count_cost(prompt_tokens, completion_tokens,
+                                              self.llm_for_models.model_name)
 
                 logger.info(
-                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=%.3f ₽; Время=%.2f сек",
                     total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
                 )
         else:
@@ -230,7 +232,7 @@ class DbtGenerator:
 
         return result
 
-    def fill_and_save_project(self):
+    def generate_project(self):
         # sources.yml
         sources = self._generate_sources()
         self._save_yml_from_dict(content=sources,
@@ -309,4 +311,11 @@ class DbtGenerator:
             return "\n\n".join(match.strip() for match in matches)
         return code_str.strip()
 
-
+    @staticmethod
+    def _count_cost(prompt_tokens: int, completion_tokens: int,
+                    model_name: str):
+        '''
+        Подсчитать стоимость запроса
+        '''
+        pricing = settings.LLM_PRICING[model_name]
+        return (prompt_tokens * pricing["input"]) / 1000 + (completion_tokens * pricing["output"]) / 1000
