@@ -18,7 +18,9 @@ class AirflowDagGenerator:
     def __init__(self, analytics_specification: AnalyticsSpec,
                  template_path: str = settings.TEMPLATE_DAG_PATH,
                  requirements_path: str = settings.REQUIREMENTS_PATH,
-                 with_metrics: bool = False):
+                 with_metrics: bool = False,
+                 model: str = settings.LLM_MODEL_FOR_AIRFLOW_MOVING_DATA,
+                 temperature: float = settings.TEMPERATURE_AIRFLOW_MOVING_DATA):
         
         self.with_metrics = with_metrics
 
@@ -26,35 +28,33 @@ class AirflowDagGenerator:
         self.business_process = analytics_specification.business_process
         self.dwh = analytics_specification.dwh
         
-        self.llm_for_moving = ChatOpenAI(
-                                model=settings.LLM_MODEL_FOR_AIRFLOW_MOVING_DATA,
-                                temperature=settings.TEMPERATURE_AIRFLOW_MOVING_DATA,
-                                max_tokens=None,
-                                timeout=None,
-                                max_retries=2,
-                                api_key=settings.OPENAI_API_KEY,
-                                base_url=settings.BASE_URL
+        self.llm = ChatOpenAI(
+                            model=model,
+                            temperature=temperature,
+                            max_tokens=None,
+                            timeout=None,
+                            max_retries=2,
+                            api_key=settings.OPENAI_API_KEY,
+                            base_url=settings.BASE_URL
                             )
-        self.llm_for_args = ChatOpenAI(
-                                model=settings.LLM_MODEL_FOR_AIRFLOW_ARGS,
-                                temperature=settings.TEMPERATURE_AIRFLOW_ARGS,
-                                max_tokens=None,
-                                timeout=None,
-                                max_retries=2,
-                                api_key=settings.OPENAI_API_KEY,
-                                base_url=settings.BASE_URL
-                            )
+        # self.llm_for_args = ChatOpenAI(
+        #                         model=settings.LLM_MODEL_FOR_AIRFLOW_ARGS,
+        #                         temperature=settings.TEMPERATURE_AIRFLOW_ARGS,
+        #                         max_tokens=None,
+        #                         timeout=None,
+        #                         max_retries=2,
+        #                         api_key=settings.OPENAI_API_KEY,
+        #                         base_url=settings.BASE_URL
+        #                     )
         self.parser = JsonOutputParser()
         
-        logger.info(f"Для аргументов используется {self.llm_for_args.model_name} с температурой {self.llm_for_args.temperature}")
-        logger.info(f"Для функции используется {self.llm_for_moving.model_name} с температурой {self.llm_for_moving.temperature}")
+        logger.info(f"Используется {self.llm.model_name} с температурой {self.llm.temperature}")
 
         with open(template_path, "r", encoding="utf-8") as f:
             self.pipeline_template = f.read()
         
         with open(requirements_path, "r", encoding="utf-8") as f:
             self.requirements = f.read()
-        
          
     def _generate_dag_args(self) -> dict[str, str]:
         '''
@@ -68,7 +68,7 @@ class AirflowDagGenerator:
                 ("user", user_template)]
         )
 
-        chain = prompt_template | self.llm_for_args | self.parser
+        chain = prompt_template | self.llm | self.parser
         
         if self.with_metrics:
             with get_openai_callback() as cb:
@@ -126,7 +126,7 @@ class AirflowDagGenerator:
                 ("user", user_template)]
         )
 
-        chain = prompt_template | self.llm_for_moving | self.parser
+        chain = prompt_template | self.llm | self.parser
         
         if self.with_metrics:
             with get_openai_callback() as cb:
@@ -170,7 +170,7 @@ class AirflowDagGenerator:
             ("system", system_template),
             ("user", user_template)
         ])
-        chain = prompt_template | self.llm_for_args
+        chain = prompt_template | self.llm
 
         result = chain.invoke({
             "name": getattr(self.business_process, "name", "Анализ"),
@@ -189,7 +189,7 @@ class AirflowDagGenerator:
              ("user", user_template)]
         )
 
-        chain = prompt_template | self.llm_for_moving
+        chain = prompt_template | self.llm
 
         result = chain.invoke(
             {"data_sources": self.data_sources}

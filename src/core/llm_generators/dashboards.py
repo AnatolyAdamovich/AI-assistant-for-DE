@@ -15,7 +15,9 @@ logger = logging.getLogger(name="DASHBOARD")
 
 class MetabaseDashboardGenerator:
     def __init__(self, metabase_url: str, username: str, password: str,
-                 with_metrics: bool = False):
+                 with_metrics: bool = False,
+                 model: str = settings.LLM_MODEL_FOR_METABASE,
+                 temperature: float = settings.TEMPERATURE_METABASE):
         '''
         Инициализация объекта
         
@@ -34,8 +36,8 @@ class MetabaseDashboardGenerator:
         self.session_id = self._authenticate()
 
         self.llm = ChatOpenAI(
-            model=settings.LLM_MODEL_FOR_METABASE,
-            temperature=settings.TEMPERATURE_METABASE,
+            model=model,
+            temperature=temperature,
             max_tokens=None,
             timeout=None,
             max_retries=2,
@@ -233,6 +235,10 @@ class MetabaseDashboardGenerator:
 
         Parameters
         ----------
+        marts_schema: dict[str, Any]
+            Схема витрин на слое marts
+        metrics: list[Metric]
+            Метрики, заданные пользователем (и сгенерированные LLM)
         '''
         # генерация настроек для карточек
         cards_data = self.generate_cards_data(marts_schema=marts_schema, 

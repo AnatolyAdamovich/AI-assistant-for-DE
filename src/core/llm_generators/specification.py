@@ -2,6 +2,7 @@ import os
 import yaml
 import logging
 import time
+import re
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_openai import ChatOpenAI
@@ -13,12 +14,14 @@ from src.core.models.analytics import DataSource, Metric, Transformation, Busine
 logger = logging.getLogger(name="SPECIFICATION")
 
 class AnalyticsSpecGenerator:
-    def __init__(self, with_metrics: bool = False):
+    def __init__(self, with_metrics: bool = False,
+                model: str = settings.LLM_MODEL_FOR_ANALYTICS_SPEC,
+                temperature: float = settings.TEMPERATURE_ANALYTICS_SPEC):
         
         self.with_metrics = with_metrics
         self.llm = ChatOpenAI(
-            model=settings.LLM_MODEL_FOR_ANALYTICS_SPEC,
-            temperature=settings.TEMPERATURE_ANALYTICS_SPEC,
+            model=model,
+            temperature=temperature,
             max_tokens=None,
             timeout=None,
             max_retries=2,
@@ -30,15 +33,14 @@ class AnalyticsSpecGenerator:
         
 
     def extract_info_from_users_desription(self, 
-                                           user_description: str,
-                                           with_reccomendations: bool = True) -> AnalyticsSpec:
+                                           user_description: str) -> dict:
         '''
         Извлечь данные в структурированном виде (см. src.models.analytics) 
         из пользовательского описания на естественном языке.
 
         Parameters
         ----------
-        user_description : str
+        user_description: str
             Пользовательское описание на естественном языке
         '''
         system_template = prompts.SYSTEM_PROMPT_ANALYTICS_SPEC
@@ -78,21 +80,9 @@ class AnalyticsSpecGenerator:
             )
         
         logger.info("ТЗ извлечено из пользовательского описания")
-        # парсинг в объект класса AnalyticsSpec
-        spec = self._from_dict_to_analytics_spec(result)
-
-        if with_reccomendations:
-            recommendations = self.recommendations(metrics=spec.metrics,
-                                                   business_process=spec.business_process,
-                                                   transformations=spec.transformations)
-            result.update(recommendations)
-            spec = self._from_dict_to_analytics_spec(result)
         
-        # сохранение в файл
-        deployment_path = settings.ARTIFACTS_DIRECTORY / "analytics_spec.yml"
-        self._save_dict_to_yml(content=result, filepath=deployment_path)
-    
-        return spec
+        return result
+        
     
     def extract_info_from_users_answers(self, 
                                         user_answers: dict[str, str]) -> AnalyticsSpec:
@@ -180,10 +170,45 @@ class AnalyticsSpecGenerator:
                     "metrics": metrics
                 }
             )   
-
+        
         logger.info("Сгенерированы рекомендации")
+        
         return result
+    
+    def generate_spec(self, 
+                      user_description: str,
+                      with_recommendations: bool = True) -> AnalyticsSpec:
+        # извлечь инфо
+        result = self.extract_info_from_users_desription(user_description)
+        # парсинг в объект класса AnalyticsSpec
+        spec = self._from_dict_to_analytics_spec(result)
 
+        if with_recommendations:
+            recommendations = self.recommendations(metrics=spec.metrics,
+                                                   business_process=spec.business_process,
+                                                   transformations=spec.transformations)
+            result.update(recommendations)
+            spec = self._from_dict_to_analytics_spec(result)
+        
+        # сохранение в файл
+        deployment_path = settings.ARTIFACTS_DIRECTORY / "analytics_spec.yml"
+        self._save_dict_to_yml(content=result, filepath=deployment_path)
+    
+        return spec
+    
+    @staticmethod
+    def _clean_json(json_str: str) -> str:
+        '''
+        Убрать обрамление ```json (если LLM генерирует markdown)
+        '''
+        json_str = json_str.content
+        pattern = r"```(?:json)?\n(.*?)```"
+        matches = re.findall(pattern, json_str, re.DOTALL)
+        if matches:
+            # если несколько блоков, объединяем их через 2 перевода строки
+            return "\n\n".join(match.strip() for match in matches)
+        return json_str.strip()
+    
     @staticmethod
     def _from_dict_to_analytics_spec(content: dict) -> AnalyticsSpec:
         '''
