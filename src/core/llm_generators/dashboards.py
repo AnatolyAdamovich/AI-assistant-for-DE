@@ -212,10 +212,12 @@ class MetabaseDashboardGenerator:
                 total_tokens = cb.total_tokens
                 prompt_tokens = cb.prompt_tokens
                 completion_tokens = cb.completion_tokens
-                total_cost = cb.total_cost
+
+                total_cost = self._count_cost(prompt_tokens, completion_tokens,
+                                              self.llm.model_name)
 
                 logger.info(
-                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=$%.10f; Время=%.2f сек",
+                    "Токены: всего=%d, prompt=%d, completion=%d; Стоимость=%.3f ₽; Время=%.2f сек",
                     total_tokens, prompt_tokens, completion_tokens, total_cost, generation_time
                 )
         else:
@@ -261,3 +263,21 @@ class MetabaseDashboardGenerator:
                                     cards_ids=cards_ids)
         
         logger.info("Аналитический дашборд готов к использованию")
+
+    @staticmethod
+    def _count_cost(prompt_tokens: int, completion_tokens: int,
+                    model_name: str):
+        '''
+        Подсчитать стоимость запроса
+
+        Parameters
+        ----------
+        prompt_tokens : int
+            Количество входящих токенов
+        completion_tokens: int
+            Количество выходящих токенов
+        model_name : str
+            LLM-модель
+        '''
+        pricing = settings.LLM_PRICING[model_name]
+        return (prompt_tokens * pricing["input"]) / 1000 + (completion_tokens * pricing["output"]) / 1000
