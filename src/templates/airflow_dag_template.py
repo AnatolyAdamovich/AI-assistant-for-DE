@@ -60,8 +60,6 @@ with DAG(
     )
   
     # последовательность задач
-    moving_data_from_source_to_dwh = moving_data_from_source_to_dwh()
-    
     (
         moving_data_from_source_to_dwh
         >> build_staging_models
