@@ -1,0 +1,53 @@
+version: 2
+models:
+- name: mart_total_sales
+  description: Общий объем продаж (выручка) по категориям, регионам и месяцам
+  columns:
+  - name: category
+    tests:
+    - not_null
+  - name: region
+    tests:
+    - not_null
+  - name: order_month
+    tests:
+    - not_null
+  - name: total_sales
+    tests:
+    - not_null
+  config:
+    materialized: table
+    engine: MergeTree()
+    order_by: order_month
+- name: mart_profit_and_margin
+  description: Прибыль и рентабельность по категориям товаров и регионам
+  columns:
+  - name: category
+    tests:
+    - not_null
+  - name: region
+    tests:
+    - not_null
+  - name: profit
+    tests:
+    - not_null
+  - name: margin
+    tests:
+    - not_null
+  config:
+    materialized: table
+    engine: MergeTree()
+    order_by: category
+- name: mart_average_check
+  description: Средний чек по различным сегментам клиентов
+  columns:
+  - name: customer_segment
+    tests:
+    - not_null
+  - name: average_check
+    tests:
+    - not_null
+  config:
+    materialized: table
+    engine: MergeTree()
+    order_by: customer_segment

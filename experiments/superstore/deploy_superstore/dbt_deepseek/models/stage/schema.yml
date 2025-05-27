@@ -1,0 +1,64 @@
+version: 2
+models:
+- name: stg_orders
+  description: Stage model for raw orders data with ETL metadata
+  columns:
+  - name: order_id
+    description: Unique order identifier
+    tests:
+    - unique
+    - not_null
+  - name: order_date
+    description: Date when order was placed
+    tests:
+    - dbt_expectations.expect_column_values_to_be_in_past:
+        datepart: day
+  - name: ship_date
+    description: Date when order was shipped
+    tests:
+    - dbt_expectations.expect_column_values_to_be_in_past:
+        datepart: day
+  - name: customer_id
+    description: Customer identifier
+    tests:
+    - not_null
+  - name: customer_name
+    description: Full customer name
+  - name: segment
+    description: Customer segment category
+  - name: region
+    description: Geographical region
+  - name: city
+    description: Delivery city
+  - name: state
+    description: Delivery state
+  - name: postal_code
+    description: Postal/ZIP code
+  - name: product_id
+    description: Product identifier
+    tests:
+    - not_null
+  - name: category
+    description: Product category
+  - name: sub_category
+    description: Product subcategory
+  - name: product_name
+    description: Product full name
+  - name: sales
+    description: Total sales amount
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+  - name: quantity
+    description: Number of units ordered
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+  - name: discount
+    description: Applied discount
+    tests:
+    - dbt_expectations.expect_column_values_to_be_between:
+        min_value: 0
+        max_value: 1
+  - name: profit
+    description: Calculated profit
+  - name: etl_loaded_at
+    description: ETL load timestamp

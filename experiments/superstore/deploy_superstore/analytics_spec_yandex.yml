@@ -1,0 +1,117 @@
+business_process:
+  name: Управление и анализ продаж розничной сети
+  description: Система занимается обработкой заказов, начиная с момента оформления
+    заказа и заканчивая его доставкой. Аналитика будет использоваться руководством
+    компании, менеджерами по продажам и отделом маркетинга для принятия решений по
+    развитию бизнеса, оптимизации ассортимента и повышению эффективности работы с
+    клиентами.
+  schedule: 30 * * * *
+  roles:
+  - role: Руководство компании
+  - role: Менеджеры по продажам
+  - role: Отдел маркетинга
+  goals:
+  - Отслеживание общего объема продаж (выручки) по месяцам, кварталам и годам
+  - Анализ прибыли и рентабельности по категориям товаров и регионам
+  - Определение среднего чека по различным сегментам клиентов
+  - Мониторинг количества заказов и динамики их изменения
+  - Выявление топ-10 самых продаваемых и самых прибыльных товаров
+  limitations: null
+data_sources:
+- name: База данных PostgreSQL
+  description: Таблица orders содержит информацию о заказах, включая идентификатор
+    заказа, дату оформления, дату отгрузки, информацию о клиенте, регионе продажи,
+    товаре и сумме продажи.
+  type: database
+  database: PostgreSQL
+  data_schema:
+    order_id: integer
+    order_date: date
+    ship_date: date
+    customer_id: integer
+    customer_name: string
+    segment: string
+    region: string
+    city: string
+    state: string
+    postal_code: string
+    product_id: integer
+    category: string
+    sub_category: string
+    product_name: string
+    sales: decimal
+    quantity: integer
+    discount: decimal
+    profit: decimal
+  access_method: Подключение к базе данных PostgreSQL
+  data_volume: null
+  limitations: null
+  recommendations: []
+  connection_params: {}
+metrics:
+- name: Общий объем продаж
+  description: Сумма всех продаж за выбранный период времени.
+  calculation_method: SUM(sales)
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+- name: Прибыль и рентабельность
+  description: Прибыль и рентабельность по категориям товаров и регионам.
+  calculation_method: SUM(profit) / SUM(sales)
+  visualization_method: Диаграмма
+  target_value: null
+  alerting_rules: null
+- name: Средний чек
+  description: Средняя сумма продажи по различным сегментам клиентов.
+  calculation_method: AVG(sales)
+  visualization_method: Таблица
+  target_value: null
+  alerting_rules: null
+- name: Количество заказов
+  description: Общее количество заказов за выбранный период времени.
+  calculation_method: COUNT(order_id)
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+- name: Топ-10 самых продаваемых товаров
+  description: Список из 10 товаров с наибольшим количеством продаж.
+  calculation_method: SELECT product_name, SUM(quantity) FROM orders GROUP BY product_name
+    ORDER BY SUM(quantity) DESC LIMIT 10
+  visualization_method: Список
+  target_value: null
+  alerting_rules: null
+- name: Топ-10 самых прибыльных товаров
+  description: Список из 10 товаров с наибольшей прибылью.
+  calculation_method: SELECT product_name, SUM(profit) FROM orders GROUP BY product_name
+    ORDER BY SUM(profit) DESC LIMIT 10
+  visualization_method: Список
+  target_value: null
+  alerting_rules: null
+- name: Динамика продаж по месяцам
+  description: Изменение общего объема продаж по месяцам.
+  calculation_method: SUM(sales) GROUP BY MONTH
+  visualization_method: График
+  target_value: null
+  alerting_rules: Оповещение при снижении продаж на 15% и более по сравнению с предыдущим
+    месяцем
+- name: Конверсия
+  description: Процент успешно завершенных покупок от общего числа визитов на сайт
+    или в магазин.
+  calculation_method: COUNT(successful_purchases) / COUNT(visits)
+  visualization_method: График
+  target_value: 0.2
+  alerting_rules: Оповещение при снижении конверсии ниже 20%
+dwh:
+  limitations: null
+  retention_policy:
+    layer: TTL
+transformations:
+- name: Преобразование данных
+  logic: Преобразование данных из таблицы orders в формат, подходящий для анализа.
+- name: Обогащение данных
+  logic: Добавление информации о категориях товаров, регионах и сегментах клиентов.
+- name: Расчет прибыли и рентабельности
+  logic: Вычисление прибыли и рентабельности для каждой категории товаров и региона.
+- name: Сегментация клиентов
+  logic: Разделение клиентов на сегменты по различным критериям (например, по частоте
+    покупок, сумме чека и т.д.).

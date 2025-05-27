@@ -1,0 +1,131 @@
+version: 2
+models:
+- name: stg_orders
+  description: Staged orders data with basic transformations and metadata
+  columns:
+  - name: order_id
+    description: Unique identifier for the order
+    data_type: integer
+    tests:
+    - not_null
+  - name: product_id
+    description: Unique identifier for the product
+    data_type: integer
+    tests:
+    - not_null
+  - name: customer_id
+    description: Unique identifier for the customer
+    data_type: integer
+    tests:
+    - not_null
+  - name: order_date
+    description: Date when the order was placed
+    data_type: date
+    tests:
+    - not_null
+  - name: ship_date
+    description: Date when the order was shipped
+    data_type: date
+  - name: customer_name
+    description: Name of the customer
+    data_type: string
+    tests:
+    - not_null
+  - name: segment
+    description: Customer segment
+    data_type: string
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - Consumer
+        - Corporate
+        - Home Office
+  - name: region
+    description: Geographic region
+    data_type: string
+    tests:
+    - not_null
+  - name: city
+    description: City name
+    data_type: string
+    tests:
+    - not_null
+  - name: state
+    description: State or province
+    data_type: string
+  - name: postal_code
+    description: Postal or ZIP code
+    data_type: string
+  - name: category
+    description: Product category
+    data_type: string
+    tests:
+    - not_null
+  - name: sub_category
+    description: Product sub-category
+    data_type: string
+    tests:
+    - not_null
+  - name: product_name
+    description: Name of the product
+    data_type: string
+    tests:
+    - not_null
+  - name: sales
+    description: Sales amount
+    data_type: numeric
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 0
+  - name: quantity
+    description: Quantity of items ordered
+    data_type: integer
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 1
+  - name: discount
+    description: Discount amount applied
+    data_type: numeric
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 0
+        max_value: 1
+  - name: profit
+    description: Profit amount
+    data_type: numeric
+    tests:
+    - not_null
+  - name: net_sales
+    description: Sales amount after discount
+    data_type: numeric
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 0
+  - name: profit_margin_pct
+    description: Profit margin as percentage
+    data_type: numeric
+  - name: _loaded_at
+    description: Timestamp when data was loaded
+    data_type: datetime
+    tests:
+    - not_null
+  - name: _dbt_run_started_at
+    description: Timestamp when dbt run started
+    data_type: string
+    tests:
+    - not_null
+  - name: _dbt_invocation_id
+    description: Unique identifier for dbt run
+    data_type: string
+    tests:
+    - not_null
+  tests:
+  - dbt_utils.unique_combination_of_columns:
+      combination_of_columns:
+      - order_id
+      - product_id

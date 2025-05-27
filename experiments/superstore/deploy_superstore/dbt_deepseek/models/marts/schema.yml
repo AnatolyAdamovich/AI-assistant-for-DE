@@ -1,0 +1,46 @@
+version: 2
+models:
+- name: fct_sales_monthly
+  description: Monthly sales aggregation with quarterly and yearly rollups
+  columns:
+  - name: order_month
+    tests:
+    - not_null
+  - name: total_sales
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+  - name: total_orders
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+- name: fct_average_ticket_segment
+  description: Average ticket size calculation by customer segment
+  columns:
+  - name: customer_segment
+    tests:
+    - not_null
+  - name: average_ticket
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+- name: fct_top_products
+  description: Top 10 products by total sales volume
+  columns:
+  - name: product_id
+    tests:
+    - not_null
+  - name: total_sales
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+- name: fct_customer_retention
+  description: Monthly customer retention rate calculation
+  columns:
+  - name: retention_rate
+    tests:
+    - dbt_expectations.expect_column_values_to_be_between:
+        min_value: 0
+        max_value: 1
+- name: fct_clv
+  description: Customer Lifetime Value calculation
+  columns:
+  - name: clv
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive

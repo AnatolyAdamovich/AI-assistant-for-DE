@@ -1,0 +1,134 @@
+business_process:
+  name: Анализ продаж розничной сети
+  description: Управление и анализ продаж розничной сети, начиная с момента оформления
+    заказа и заканчивая его доставкой.
+  schedule: 30 * * * *
+  roles:
+  - role: Руководство компании
+  - role: Менеджеры по продажам
+  - role: Отдел маркетинга
+  goals:
+  - Принятие решений по развитию бизнеса
+  - Оптимизация ассортимента
+  - Повышение эффективности работы с клиентами
+  limitations: null
+data_sources:
+- name: orders
+  description: Таблица с информацией о заказах
+  type: database
+  database: PostgreSQL
+  data_schema:
+    order_id: integer
+    order_date: date
+    ship_date: date
+    customer_id: integer
+    customer_name: string
+    segment: string
+    region: string
+    city: string
+    state: string
+    postal_code: string
+    product_id: integer
+    category: string
+    sub_category: string
+    product_name: string
+    sales: numeric
+    quantity: integer
+    discount: numeric
+    profit: numeric
+  access_method: JDBC
+  data_volume: Неизвестно
+  limitations: null
+  recommendations: []
+  connection_params:
+    host: '...'
+    port: '5432'
+    user: '...'
+    password: '...'
+    database: '...'
+metrics:
+- name: Общий объем продаж (выручка)
+  description: Сумма продаж по месяцам, кварталам и годам
+  calculation_method: SUM(sales) GROUP BY month/quarter/year
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+- name: Прибыль и рентабельность
+  description: Прибыль и рентабельность по категориям товаров и регионам
+  calculation_method: SUM(profit) GROUP BY category/region; profit/sales
+  visualization_method: Столбчатая диаграмма
+  target_value: null
+  alerting_rules: null
+- name: Средний чек
+  description: Средний чек по различным сегментам клиентов
+  calculation_method: SUM(sales) / COUNT(DISTINCT order_id) GROUP BY segment
+  visualization_method: Таблица
+  target_value: null
+  alerting_rules: null
+- name: Количество заказов и динамика их изменения
+  description: Количество заказов и динамика их изменения
+  calculation_method: COUNT(DISTINCT order_id)
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+- name: Топ-10 самых продаваемых и самых прибыльных товаров
+  description: Топ-10 самых продаваемых и самых прибыльных товаров
+  calculation_method: SUM(sales) ORDER BY sales DESC LIMIT 10; SUM(profit) ORDER BY
+    profit DESC LIMIT 10
+  visualization_method: Таблица
+  target_value: null
+  alerting_rules: null
+- name: Коэффициент удержания клиентов (Customer Retention Rate)
+  description: Процент клиентов, которые продолжают совершать покупки в течение определенного
+    периода времени.
+  calculation_method: ( (Customers_at_end - New_customers) / Customers_at_start) *
+    100
+  visualization_method: График
+  target_value: 0.7
+  alerting_rules: Если CRR < 0.5, отправить уведомление менеджеру по продажам.
+- name: Пожизненная ценность клиента (Customer Lifetime Value)
+  description: Прогнозируемый доход, который клиент принесет за все время сотрудничества
+    с компанией.
+  calculation_method: Average_order_value * Purchase_frequency * Customer_lifespan
+  visualization_method: Гистограмма
+  target_value: 500
+  alerting_rules: Если CLV < 300, отправить уведомление отделу маркетинга.
+- name: Среднее время доставки заказа
+  description: Среднее время, необходимое для доставки заказа клиенту.
+  calculation_method: AVG(delivery_date - order_date)
+  visualization_method: Таблица
+  target_value: 3
+  alerting_rules: Если среднее время доставки > 5 дней, отправить уведомление логистическому
+    отделу.
+- name: Процент возвратов
+  description: Процент заказов, которые были возвращены клиентами.
+  calculation_method: (Number_of_returns / Total_orders) * 100
+  visualization_method: Круговая диаграмма
+  target_value: 0.05
+  alerting_rules: Если процент возвратов > 0.1, отправить уведомление отделу контроля
+    качества.
+- name: ABC-анализ продаж
+  description: Классификация товаров по объему продаж (A - самые продаваемые, C -
+    наименее продаваемые).
+  calculation_method: Сортировка товаров по объему продаж, разделение на группы A
+    (80%), B (15%), C (5%).
+  visualization_method: Диаграмма Парето
+  target_value: null
+  alerting_rules: null
+dwh:
+  limitations: null
+  retention_policy: {}
+transformations:
+- name: Преобразование типов данных
+  logic: CAST(order_date AS DATE), CAST(sales AS DECIMAL)
+- name: Агрегация данных
+  logic: GROUP BY category, region, month(order_date)
+- name: Определение сегментов клиентов
+  logic: CASE WHEN total_spent > X THEN 'VIP' WHEN order_count > Y THEN 'Frequent'
+    ELSE 'Regular' END
+- name: Расчет возраста клиента
+  logic: DATE_DIFF(CURDATE(), birth_date, YEAR)
+- name: Гео-обогащение
+  logic: Получение координат (широта, долгота) по адресу клиента.
+- name: Категоризация товаров
+  logic: Сопоставление товаров с предопределенными категориями и подкатегориями.

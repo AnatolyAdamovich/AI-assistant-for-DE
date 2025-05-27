@@ -1,0 +1,100 @@
+version: 2
+models:
+- name: int_orders_enriched
+  description: Enriched orders data with calculated metrics and categorizations
+  columns:
+  - name: order_id
+    description: Unique identifier for the order
+    tests:
+    - not_null
+  - name: product_id
+    description: Unique identifier for the product
+    tests:
+    - not_null
+  - name: customer_id
+    description: Unique identifier for the customer
+    tests:
+    - not_null
+  - name: delivery_days
+    description: Number of days between order and ship date
+    tests:
+    - dbt_utils.accepted_range:
+        min_value: 0
+        max_value: 365
+  - name: delivery_status
+    description: Categorized delivery speed
+    tests:
+    - accepted_values:
+        values:
+        - Not Shipped
+        - Fast
+        - Standard
+        - Slow
+  - name: order_size_category
+    description: Order size categorization based on net sales
+    tests:
+    - accepted_values:
+        values:
+        - Micro
+        - Small
+        - Medium
+        - Large
+  - name: profitability_category
+    description: Profitability categorization based on profit margin
+    tests:
+    - accepted_values:
+        values:
+        - Loss
+        - Low Margin
+        - Medium Margin
+        - High Margin
+  tests:
+  - dbt_utils.unique_combination_of_columns:
+      combination_of_columns:
+      - order_id
+      - product_id
+- name: int_customer_metrics
+  description: Aggregated customer metrics and segmentation
+  columns:
+  - name: customer_id
+    description: Unique identifier for the customer
+    tests:
+    - not_null
+    - unique
+  - name: total_orders
+    description: Total number of orders placed by customer
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 1
+  - name: total_spent
+    description: Total amount spent by customer
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 0
+  - name: customer_tier
+    description: Customer segmentation tier
+    tests:
+    - accepted_values:
+        values:
+        - Regular
+        - High Value
+        - Frequent
+        - VIP
+  - name: customer_lifetime_days
+    description: Days between first and last order
+    tests:
+    - dbt_utils.accepted_range:
+        min_value: 0
+- name: int_product_performance
+  description: Product performance metrics and categorization
+  columns:
+  - name: product_id
+    description: Unique identifier for the product
+    tests:
+    - not_null
+    - unique
+  - name: total_orders
+    description: Total number of orders for this product
+    tests: []

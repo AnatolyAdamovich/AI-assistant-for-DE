@@ -1,0 +1,83 @@
+version: 2
+models:
+- name: stg_orders
+  description: Stage модель для таблицы заказов, содержащая информацию о заказах с
+    добавлением метаданных.
+  columns:
+  - name: order_id
+    description: Уникальный идентификатор заказа.
+    tests:
+    - not_null
+    - unique
+  - name: order_date
+    description: Дата размещения заказа.
+    tests:
+    - not_null
+  - name: ship_date
+    description: Дата отправки заказа.
+    tests:
+    - not_null
+  - name: customer_id
+    description: Уникальный идентификатор клиента.
+    tests:
+    - not_null
+  - name: customer_name
+    description: Имя клиента.
+    tests:
+    - not_null
+  - name: segment
+    description: Сегмент клиента.
+    tests:
+    - not_null
+  - name: region
+    description: Регион клиента.
+    tests:
+    - not_null
+  - name: city
+    description: Город клиента.
+    tests:
+    - not_null
+  - name: state
+    description: Штат клиента.
+    tests:
+    - not_null
+  - name: postal_code
+    description: Почтовый индекс клиента.
+    tests:
+    - not_null
+  - name: product_id
+    description: Уникальный идентификатор продукта.
+    tests:
+    - not_null
+  - name: category
+    description: Категория продукта.
+    tests:
+    - not_null
+  - name: sub_category
+    description: Подкатегория продукта.
+    tests:
+    - not_null
+  - name: product_name
+    description: Название продукта.
+    tests:
+    - not_null
+  - name: sales
+    description: Сумма продаж.
+    tests:
+    - not_null
+  - name: quantity
+    description: Количество проданных единиц.
+    tests:
+    - not_null
+  - name: discount
+    description: Скидка на продукт.
+    tests:
+    - not_null
+  - name: profit
+    description: Прибыль от продажи продукта.
+    tests:
+    - not_null
+  - name: load_timestamp
+    description: Метка времени загрузки данных в stage слой.
+    tests:
+    - not_null

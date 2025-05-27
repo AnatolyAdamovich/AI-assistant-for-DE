@@ -1,0 +1,72 @@
+version: 2
+models:
+- name: sales_by_time
+  description: Модель для расчета общего объема продаж по месяцам, кварталам и годам.
+  columns:
+  - name: year
+    description: Год размещения заказа.
+    tests:
+    - not_null
+  - name: quarter
+    description: Квартал размещения заказа.
+    tests:
+    - not_null
+  - name: month
+    description: Месяц размещения заказа.
+    tests:
+    - not_null
+  - name: total_sales
+    description: Общий объем продаж.
+    tests:
+    - not_null
+- name: profit_by_category_region
+  description: Модель для расчета прибыли и рентабельности по категориям товаров и
+    регионам.
+  columns:
+  - name: category
+    description: Категория продукта.
+    tests:
+    - not_null
+  - name: region
+    description: Регион клиента.
+    tests:
+    - not_null
+  - name: total_profit
+    description: Общая прибыль.
+    tests:
+    - not_null
+  - name: profitability
+    description: Рентабельность (прибыль/выручка).
+    tests:
+    - not_null
+- name: average_check_by_segment
+  description: Модель для расчета среднего чека по различным сегментам клиентов.
+  columns:
+  - name: customer_segment
+    description: Сегмент клиента.
+    tests:
+    - not_null
+  - name: average_check
+    description: Средний чек.
+    tests:
+    - not_null
+- name: top_10_products
+  description: Модель для определения топ-10 самых продаваемых и самых прибыльных
+    товаров.
+  columns:
+  - name: category
+    description: Категория продукта.
+    tests:
+    - not_null
+  - name: product_name
+    description: Название продукта.
+    tests:
+    - not_null
+  - name: total_sales
+    description: Общий объем продаж.
+    tests:
+    - not_null
+  - name: total_profit
+    description: Общая прибыль.
+    tests:
+    - not_null

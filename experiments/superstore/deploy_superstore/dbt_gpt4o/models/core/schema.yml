@@ -1,0 +1,82 @@
+version: 2
+models:
+- name: int_orders_summary
+  description: Модель для агрегирования данных о заказах и определения сегментов клиентов.
+  columns:
+  - name: order_id
+    description: Уникальный идентификатор заказа.
+    tests:
+    - not_null
+    - unique
+  - name: order_date
+    description: Дата размещения заказа.
+    tests:
+    - not_null
+  - name: customer_id
+    description: Уникальный идентификатор клиента.
+    tests:
+    - not_null
+  - name: customer_segment
+    description: Сегмент клиента (VIP, Frequent, Regular).
+    tests:
+    - not_null
+  - name: category
+    description: Категория продукта.
+    tests:
+    - not_null
+  - name: region
+    description: Регион клиента.
+    tests:
+    - not_null
+  - name: sales
+    description: Сумма продаж.
+    tests:
+    - not_null
+  - name: quantity
+    description: Количество проданных единиц.
+    tests:
+    - not_null
+  - name: discount
+    description: Скидка на продукт.
+    tests:
+    - not_null
+  - name: profit
+    description: Прибыль от продажи продукта.
+    tests:
+    - not_null
+- name: int_geo_enriched_customers
+  description: Модель для гео-обогащения данных о клиентах.
+  columns:
+  - name: customer_id
+    description: Уникальный идентификатор клиента.
+    tests:
+    - not_null
+    - unique
+  - name: customer_name
+    description: Имя клиента.
+    tests:
+    - not_null
+  - name: region
+    description: Регион клиента.
+    tests:
+    - not_null
+  - name: city
+    description: Город клиента.
+    tests:
+    - not_null
+  - name: state
+    description: Штат клиента.
+    tests:
+    - not_null
+  - name: postal_code
+    description: Почтовый индекс клиента.
+    tests:
+    - not_null
+  - name: latitude
+    description: Широта клиента.
+    tests:
+    - not_null
+  - name: longitude
+    description: Долгота клиента.
+    tests:
+    - not_null

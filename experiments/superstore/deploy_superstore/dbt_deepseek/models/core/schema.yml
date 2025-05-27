@@ -1,0 +1,64 @@
+version: 2
+models:
+- name: int_orders_cleaned
+  description: Cleaned orders data with type conversions and basic validation
+  columns:
+  - name: order_id
+    tests:
+    - unique
+    - not_null
+  - name: order_date
+    tests:
+    - not_null
+  - name: sales_amount
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+  - name: discount
+    tests:
+    - dbt_expectations.expect_column_values_to_be_between:
+        min_value: 0
+        max_value: 1
+  - name: customer_id
+    tests:
+    - not_null
+  - name: product_id
+    tests:
+    - not_null
+- name: int_sales_category_region_monthly
+  description: Aggregated monthly sales metrics by product category and region
+  columns:
+  - name: category
+    tests:
+    - not_null
+  - name: region
+    tests:
+    - not_null
+  - name: order_month
+    tests:
+    - not_null
+  - name: total_sales
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+  - name: total_quantity
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+- name: int_customer_segments
+  description: Customer segmentation based on spending behavior
+  columns:
+  - name: customer_id
+    tests:
+    - unique
+    - not_null
+  - name: total_spent
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+  - name: order_count
+    tests:
+    - dbt_expectations.expect_column_values_to_be_positive
+  - name: customer_segment
+    tests:
+    - dbt_expectations.expect_column_values_to_be_in_set:
+        value_set:
+        - VIP
+        - Frequent
+        - Regular

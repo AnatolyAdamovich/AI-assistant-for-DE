@@ -1,0 +1,101 @@
+business_process:
+  name: Анализ продаж розничной сети
+  description: Отслеживание и анализ данных о продажах, начиная с момента оформления
+    заказа и заканчивая доставкой.
+  schedule: 30 * * * *
+  roles:
+  - role: руководство компании
+  - role: менеджеры по продажам
+  - role: отдел маркетинга
+  goals:
+  - Принятие решений по развитию бизнеса
+  - Оптимизация ассортимента
+  - Повышение эффективности работы с клиентами
+  limitations: null
+data_sources:
+- name: orders
+  description: Таблица заказов в базе данных PostgreSQL
+  type: database
+  database: PostgreSQL
+  data_schema:
+    order_id: int
+    order_date: date
+    ship_date: date
+    customer_id: int
+    customer_name: string
+    segment: string
+    region: string
+    city: string
+    state: string
+    postal_code: string
+    product_id: int
+    category: string
+    sub_category: string
+    product_name: string
+    sales: float
+    quantity: int
+    discount: float
+    profit: float
+  access_method: SQL-запросы
+  data_volume: Не указано
+  limitations: null
+  recommendations: []
+  connection_params: {}
+metrics:
+- name: Общий объем продаж
+  description: Выручка по месяцам, кварталам и годам
+  calculation_method: SUM(sales) по группировке по месяцам, кварталам и годам
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+- name: Прибыль и рентабельность
+  description: Прибыль и рентабельность по категориям товаров и регионам
+  calculation_method: SUM(profit)/SUM(sales) по группировке по категориям и регионам
+  visualization_method: Таблица, диаграмма
+  target_value: null
+  alerting_rules: null
+- name: Средний чек
+  description: Средний чек по сегментам клиентов
+  calculation_method: AVG(sales) по группировке по сегментам клиентов
+  visualization_method: Таблица
+  target_value: null
+  alerting_rules: null
+- name: Количество заказов
+  description: Количество заказов и динамика их изменения
+  calculation_method: COUNT(order_id) по датам
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+- name: Топ-10 товаров
+  description: Топ-10 самых продаваемых и прибыльных товаров
+  calculation_method: ORDER BY sales и profit LIMIT 10
+  visualization_method: Таблица
+  target_value: null
+  alerting_rules: null
+- name: Доля возвратов
+  description: Процент возвратов от общего количества заказов
+  calculation_method: COUNT(returned_orders)/COUNT(total_orders)
+  visualization_method: Диаграмма
+  target_value: 0.05
+  alerting_rules: Если доля возвратов превышает 5%, отправить уведомление
+- name: Среднее время обработки заказа
+  description: Среднее время от оформления до доставки заказа
+  calculation_method: AVG(delivery_date - order_date)
+  visualization_method: Таблица
+  target_value: 3
+  alerting_rules: Если среднее время превышает 3 дня, отправить уведомление
+dwh:
+  limitations: null
+  retention_policy:
+    layer: RAW
+    TTL: 5 лет
+transformations:
+- name: Расчет маржи
+  logic: profit = sales - cost
+- name: Обогащение данных о клиентах
+  logic: JOIN с таблицей клиентов по customer_id
+- name: Добавление временных меток
+  logic: EXTRACT(YEAR, MONTH, DAY FROM order_date)
+- name: Классификация товаров
+  logic: CASE WHEN category IN ('A', 'B') THEN 'Высокий приоритет' ELSE 'Низкий приоритет'
+    END
