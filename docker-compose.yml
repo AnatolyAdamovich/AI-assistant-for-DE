@@ -8,8 +8,8 @@ services:
       - "8123:8123"
       - "9000:9000"
     environment:
-      CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: password
+      CLICKHOUSE_USER: analyst
+      CLICKHOUSE_PASSWORD: dbt
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - ./infra/clickhouse_init:/docker-entrypoint-initdb.d
