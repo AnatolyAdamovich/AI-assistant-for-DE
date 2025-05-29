@@ -1,0 +1,13 @@
+airflow:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      host: clickhouse
+      user: analyst
+      password: dbt
+      port: 9000
+      dbname: analytics
+      schema: analytics
+      custom_settings:
+        enable_dynamic_type: 1

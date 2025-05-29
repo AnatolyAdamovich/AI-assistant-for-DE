@@ -1,0 +1,47 @@
+version: 2
+models:
+- name: stg_weather_metrics
+  description: Staged weather metrics from OpenMeteo API with standardized units and
+    metadata
+  columns:
+  - name: temperature_celsius
+    description: Air temperature at 2 meters height in Celsius
+    tests:
+    - not_null
+  - name: temperature_fahrenheit
+    description: Air temperature at 2 meters height in Fahrenheit (converted)
+    tests:
+    - not_null
+  - name: humidity_percent
+    description: Relative humidity at 2 meters height as percentage
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 0
+        max_value: 100
+  - name: wind_speed_ms
+    description: Wind speed at 10 meters height in meters per second
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 0
+        max_value: 100
+  - name: wind_speed_kmh
+    description: Wind speed at 10 meters height in kilometers per hour (converted)
+    tests:
+    - not_null
+  - name: precipitation_mm
+    description: Precipitation amount in millimeters
+    tests:
+    - not_null
+    - dbt_utils.accepted_range:
+        min_value: 0
+        max_value: 500
+  - name: _loaded_at
+    description: Timestamp when the record was loaded into the staging layer
+    tests:
+    - not_null
+  - name: _loaded_date
+    description: Date when the record was loaded (for partitioning)
+    tests:
+    - not_null

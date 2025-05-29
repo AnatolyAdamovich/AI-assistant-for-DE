@@ -1,0 +1,191 @@
+version: 2
+models:
+- name: mart_weather_daily_metrics
+  description: Daily weather metrics with alerting flags for temperature, humidity,
+    wind speed and precipitation
+  columns:
+  - name: measurement_date
+    description: Date of weather measurements
+    tests:
+    - not_null
+    - unique
+  - name: avg_temperature_celsius
+    description: Average daily temperature in Celsius
+    tests:
+    - not_null
+  - name: avg_humidity_percent
+    description: Average daily humidity percentage
+    tests:
+    - not_null
+  - name: avg_wind_speed_ms
+    description: Average daily wind speed in meters per second
+    tests:
+    - not_null
+  - name: total_precipitation_mm
+    description: Total daily precipitation in millimeters
+    tests:
+    - not_null
+  - name: high_temperature_alert
+    description: Alert flag for days with temperature above 25°C
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - 0
+        - 1
+  - name: high_humidity_alert
+    description: Alert flag for days with humidity above 80%
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - 0
+        - 1
+  - name: high_wind_alert
+    description: Alert flag for days with wind speed above 10 m/s
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - 0
+        - 1
+  - name: high_precipitation_alert
+    description: Alert flag for days with precipitation above 5mm
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - 0
+        - 1
+- name: mart_weather_anomalies
+  description: Temperature anomalies compared to climate norms with alerting
+  columns:
+  - name: measurement_date
+    description: Date of weather measurement
+    tests:
+    - not_null
+    - unique
+  - name: temperature_celsius
+    description: Daily average temperature in Celsius
+    tests:
+    - not_null
+  - name: climate_norm
+    description: Historical baseline temperature for the day
+    tests:
+    - not_null
+  - name: temperature_anomaly
+    description: Temperature deviation from climate norm in Celsius
+    tests:
+    - not_null
+  - name: anomaly_severity
+    description: Categorical severity of temperature anomaly
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - Normal
+        - Moderate
+        - Significant
+        - Extreme
+  - name: significant_anomaly_alert
+    description: Alert flag for anomalies exceeding 5°C
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - 0
+        - 1
+- name: mart_weather_comfort
+  description: Hourly comfort index metrics with low comfort alerting
+  columns:
+  - name: measurement_date
+    description: Date of weather measurement
+    tests:
+    - not_null
+  - name: hour
+    description: Hour of the day (0-23)
+    tests:
+    - not_null
+  - name: avg_comfort_index
+    description: Average comfort index for the hour
+    tests:
+    - not_null
+  - name: min_comfort_index
+    description: Minimum comfort index for the hour
+    tests:
+    - not_null
+  - name: max_comfort_index
+    description: Maximum comfort index for the hour
+    tests:
+    - not_null
+  - name: worst_comfort_category
+    description: Worst comfort category during the hour
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - Excellent
+        - Good
+        - Fair
+        - Poor
+        - Very Poor
+  - name: low_comfort_alert
+    description: Alert flag for comfort index below 30
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - 0
+        - 1
+- name: mart_weather_summary
+  description: Comprehensive daily weather summary combining all metrics and alerts
+  columns:
+  - name: measurement_date
+    description: Date of weather measurements
+    tests:
+    - not_null
+    - unique
+  - name: avg_temperature_celsius
+    description: Average daily temperature in Celsius
+    tests:
+    - not_null
+  - name: avg_humidity_percent
+    description: Average daily humidity percentage
+    tests:
+    - not_null
+  - name: avg_wind_speed_ms
+    description: Average daily wind speed in meters per second
+    tests:
+    - not_null
+  - name: total_precipitation_mm
+    description: Total daily precipitation in millimeters
+    tests:
+    - not_null
+  - name: temperature_anomaly
+    description: Temperature deviation from climate norm
+  - name: anomaly_severity
+    description: Categorical severity of temperature anomaly
+  - name: daily_avg_comfort_index
+    description: Daily average comfort index
+  - name: daily_worst_comfort
+    description: Worst comfort category during the day
+  - name: high_temperature_alert
+    description: Alert flag for high temperature
+    tests:
+    - not_null
+  - name: high_humidity_alert
+    description: Alert flag for high humidity
+    tests:
+    - not_null
+  - name: high_wind_alert
+    description: Alert flag for high wind speed
+    tests:
+    - not_null
+  - name: high_precipitation_alert
+    description: Alert flag for high precipitation
+    tests:
+    - not_null
+  - name: significant_anomaly_alert
+    description: Alert flag for significant temperature anomaly
+  - name: daily_low_comfort_alert
+    description: Alert flag for low comfort index during the day
