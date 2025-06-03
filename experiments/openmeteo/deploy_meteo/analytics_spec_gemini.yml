@@ -1,0 +1,103 @@
+business_process:
+  name: Мониторинг погодных условий в Москве
+  description: Сбор и анализ данных о погоде в Москве для выявления аномалий и предоставления
+    информации синоптикам.
+  schedule: 0 0-2 * * *
+  roles:
+  - role: Синоптики
+  goals:
+  - Мониторинг текущих погодных условий
+  - Выявление аномальных погодных явлений
+  - Предоставление данных для прогнозирования погоды
+  limitations: null
+data_sources:
+- name: OpenMeteo API
+  description: API для получения исторических и текущих данных о погоде.
+  type: api
+  database: null
+  data_schema:
+    temperature_2m: float
+    humidity_2m: float
+    wind_speed_10m: float
+    precipitation: float
+    time: datetime
+  access_method: HTTP requests
+  data_volume: Небольшой (объем данных о погоде за один день)
+  limitations: null
+  recommendations:
+  - Использовать API-ключ (если требуется)
+  - Учитывать лимиты API по количеству запросов
+  connection_params:
+    url: https://api.open-meteo.com/v1/forecast
+metrics:
+- name: Среднесуточная температура
+  description: Среднее значение температуры за сутки.
+  calculation_method: AVG(temperature_2m) WHERE time BETWEEN 00:00 AND 23:59
+  visualization_method: График
+  target_value: null
+  alerting_rules: Если среднесуточная температура > X или < Y
+- name: Среднесуточная влажность
+  description: Среднее значение влажности за сутки.
+  calculation_method: AVG(humidity_2m) WHERE time BETWEEN 00:00 AND 23:59
+  visualization_method: График
+  target_value: null
+  alerting_rules: null
+- name: Максимальная скорость ветра
+  description: Максимальное значение скорости ветра за сутки.
+  calculation_method: MAX(wind_speed_10m) WHERE time BETWEEN 00:00 AND 23:59
+  visualization_method: График
+  target_value: null
+  alerting_rules: Если максимальная скорость ветра > Z
+- name: Сумма осадков
+  description: Суммарное количество осадков за сутки.
+  calculation_method: SUM(precipitation) WHERE time BETWEEN 00:00 AND 23:59
+  visualization_method: Столбчатая диаграмма
+  target_value: null
+  alerting_rules: null
+- name: Отклонение температуры от исторической нормы
+  description: Разница между текущей среднесуточной температурой и исторической среднесуточной
+    температурой за тот же период.
+  calculation_method: current_avg_temp - historical_avg_temp
+  visualization_method: График отклонений
+  target_value: 0
+  alerting_rules: Если отклонение > A или < -A
+- name: Количество дней с аномально высокой температурой
+  description: Количество дней в месяце, когда среднесуточная температура превышает
+    заданный порог.
+  calculation_method: COUNT(date) WHERE current_avg_temp > historical_avg_temp + threshold
+    GROUP BY month
+  visualization_method: Столбчатая диаграмма
+  target_value: null
+  alerting_rules: Если количество дней > B
+- name: Интенсивность осадков
+  description: Отношение суммы осадков к количеству часов с осадками.
+  calculation_method: SUM(precipitation) / COUNT(time) WHERE precipitation > 0
+  visualization_method: График
+  target_value: null
+  alerting_rules: Если интенсивность осадков > C
+- name: Риск гололеда
+  description: Вероятность образования гололеда на основе температуры и осадков.
+  calculation_method: IF temperature_2m < 0 AND precipitation > 0 THEN risk = HIGH
+    ELSE risk = LOW
+  visualization_method: Тепловая карта
+  target_value: null
+  alerting_rules: Если риск = HIGH
+dwh:
+  limitations: null
+  retention_policy:
+    layer: 365 days
+transformations:
+- name: Расчет среднесуточных значений
+  logic: GROUP BY date; AVG(temperature_2m), AVG(humidity_2m), MAX(wind_speed_10m),
+    SUM(precipitation)
+- name: Выявление аномалий
+  logic: IF temperature_2m > historical_avg_temp + threshold THEN anomaly = TRUE
+- name: Обогащение историческими данными
+  logic: JOIN weather_data WITH historical_weather_data ON date; historical_avg_temp
+    = AVG(temperature_2m) FROM historical_weather_data WHERE date BETWEEN date - 30
+    AND date -1
+- name: Категоризация скорости ветра
+  logic: CASE WHEN wind_speed_10m < 5 THEN wind_category = 'Calm' WHEN wind_speed_10m
+    < 10 THEN wind_category = 'Light' ELSE wind_category = 'Strong' END
+- name: Преобразование времени
+  logic: Convert timestamp to date and hour

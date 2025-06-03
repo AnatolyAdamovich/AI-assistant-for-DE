@@ -1,0 +1,81 @@
+version: 2
+models:
+- name: daily_weather_metrics
+  description: Aggregated daily weather metrics including temperature, humidity, wind
+    speed, and precipitation.
+  columns:
+  - name: date
+    description: Date of the aggregated metrics.
+    tests:
+    - not_null
+  - name: avg_temperature
+    description: Average daily temperature.
+    tests:
+    - not_null
+    - numeric
+  - name: avg_humidity
+    description: Average daily relative humidity.
+    tests:
+    - not_null
+    - numeric
+  - name: avg_wind_speed
+    description: Average daily wind speed.
+    tests:
+    - not_null
+    - numeric
+  - name: total_precipitation
+    description: Total daily precipitation.
+    tests:
+    - not_null
+    - numeric
+- name: temperature_anomalies
+  description: Daily temperature anomalies calculated as the difference between average
+    temperature and climate norm.
+  columns:
+  - name: date
+    description: Date of the temperature anomaly calculation.
+    tests:
+    - not_null
+  - name: avg_temperature
+    description: Average daily temperature.
+    tests:
+    - not_null
+    - numeric
+  - name: climate_norm
+    description: Climate norm temperature for the date.
+    tests:
+    - not_null
+    - numeric
+  - name: temperature_anomaly
+    description: Difference between average temperature and climate norm temperature.
+    tests:
+    - not_null
+    - numeric
+- name: comfort_index
+  description: Daily comfort index calculated based on temperature, humidity, and
+    wind speed.
+  columns:
+  - name: date
+    description: Date of the comfort index calculation.
+    tests:
+    - not_null
+  - name: avg_temperature
+    description: Average daily temperature.
+    tests:
+    - not_null
+    - numeric
+  - name: avg_humidity
+    description: Average daily relative humidity.
+    tests:
+    - not_null
+    - numeric
+  - name: avg_wind_speed
+    description: Average daily wind speed.
+    tests:
+    - not_null
+    - numeric
+  - name: comfort_index
+    description: Calculated comfort index based on weather metrics.
+    tests:
+    - not_null
+    - numeric

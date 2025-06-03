@@ -1,0 +1,33 @@
+version: 2
+models:
+- name: stg_open_meteo
+  description: Stage model for OpenMeteo API data with quality checks
+  columns:
+  - name: _loaded_at
+    description: Data loading timestamp
+    tests:
+    - not_null
+  - name: temperature_2m
+    description: Air temperature at 2 meters
+    tests:
+    - dbt_expectations.expect_column_values_to_be_between:
+        min_value: -50
+        max_value: 60
+  - name: relative_humidity_2m
+    description: Relative humidity at 2 meters
+    tests:
+    - dbt_expectations.expect_column_values_to_be_between:
+        min_value: 0
+        max_value: 100
+  - name: wind_speed_10m
+    description: Wind speed at 10 meters
+    tests:
+    - dbt_expectations.expect_column_values_to_be_between:
+        min_value: 0
+        max_value: 150
+  - name: precipitation
+    description: Total precipitation
+    tests:
+    - dbt_expectations.expect_column_values_to_be_between:
+        min_value: 0
+        max_value: 1000

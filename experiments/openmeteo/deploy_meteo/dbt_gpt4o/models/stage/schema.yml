@@ -1,0 +1,29 @@
+version: 2
+models:
+- name: stg_openmeteo_api
+  description: Stage model for OpenMeteo API data, including metadata for load time.
+  columns:
+  - name: temperature_2m
+    description: Temperature at 2 meters above ground level.
+    tests:
+    - not_null
+    - numeric
+  - name: relative_humidity_2m
+    description: Relative humidity at 2 meters above ground level.
+    tests:
+    - not_null
+    - numeric
+  - name: wind_speed_10m
+    description: Wind speed at 10 meters above ground level.
+    tests:
+    - not_null
+    - numeric
+  - name: precipitation
+    description: Precipitation level.
+    tests:
+    - not_null
+    - numeric
+  - name: load_timestamp
+    description: Timestamp when the data was loaded into the stage layer.
+    tests:
+    - not_null

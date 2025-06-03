@@ -1,0 +1,86 @@
+business_process:
+  name: Мониторинг погодных условий в Москве
+  description: Система для сбора и анализа данных о погодных условиях в Москве, включая
+    температуру, влажность, скорость ветра и осадки.
+  schedule: 0 1 * * *
+  roles:
+  - role: Синоптики
+  goals:
+  - Мониторинг текущих погодных условий
+  - Расчёт среднесуточных значений
+  - Выявление дней с экстремальными погодными условиями
+  limitations: null
+data_sources:
+- name: OpenMeteo API
+  description: API для получения данных о погодных условиях
+  type: api
+  database: ''
+  data_schema:
+    temperature: float
+    humidity: float
+    wind_speed: float
+    precipitation: float
+  access_method: HTTP request
+  data_volume: Не указано
+  limitations: null
+  recommendations: []
+  connection_params: {}
+metrics:
+- name: Среднесуточная температура
+  description: Среднее значение температуры за сутки
+  calculation_method: AVG(temperature)
+  visualization_method: График
+  target_value: null
+  alerting_rules: None
+- name: Среднесуточная влажность
+  description: Среднее значение влажности за сутки
+  calculation_method: AVG(humidity)
+  visualization_method: График
+  target_value: null
+  alerting_rules: None
+- name: Среднесуточная скорость ветра
+  description: Среднее значение скорости ветра за сутки
+  calculation_method: AVG(wind_speed)
+  visualization_method: График
+  target_value: null
+  alerting_rules: None
+- name: Количество осадков
+  description: Общее количество осадков за сутки
+  calculation_method: SUM(precipitation)
+  visualization_method: Столбчатая диаграмма
+  target_value: null
+  alerting_rules: None
+- name: Максимальная температура
+  description: Максимальное значение температуры за сутки
+  calculation_method: MAX(temperature)
+  visualization_method: График
+  target_value: null
+  alerting_rules: alert if MAX(temperature) > 30
+- name: Минимальная температура
+  description: Минимальное значение температуры за сутки
+  calculation_method: MIN(temperature)
+  visualization_method: График
+  target_value: null
+  alerting_rules: alert if MIN(temperature) < -20
+- name: Среднеквадратичное отклонение температуры
+  description: Среднеквадратичное отклонение температуры за сутки
+  calculation_method: STDDEV(temperature)
+  visualization_method: График
+  target_value: null
+  alerting_rules: None
+dwh:
+  limitations: null
+  retention_policy:
+    layer: 365 дней
+transformations:
+- name: Расчёт среднесуточных значений
+  logic: Группировка данных по дате и расчёт средних значений для каждой группы
+- name: Выявление аномалий
+  logic: Сравнение значений с заранее определёнными пороговыми значениями для выявления
+    экстремальных условий
+- name: Расчёт максимального и минимального значений температуры
+  logic: Группировка данных по дате и расчёт максимального и минимального значений
+    температуры для каждой группы
+- name: Расчёт среднеквадратичного отклонения температуры
+  logic: Группировка данных по дате и расчёт среднеквадратичного отклонения температуры
+    для каждой группы

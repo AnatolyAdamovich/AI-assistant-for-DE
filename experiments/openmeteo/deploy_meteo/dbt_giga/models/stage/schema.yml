@@ -1,0 +1,41 @@
+version: 2
+sources:
+- name: exported_data
+  schema: last
+  tables:
+  - name: OpenMeteo API
+    identifier: OpenMeteo API_last_data
+    description: API для получения метеорологических данных
+    columns:
+    - name: temperature_2m
+      data_type: float
+    - name: relative_humidity_2m
+      data_type: float
+    - name: wind_speed_10m
+      data_type: float
+    - name: precipitation
+      data_type: float
+models:
+- name: stg_openmeteo_api
+  description: Stage model for OpenMeteo API data
+  columns:
+  - name: temperature_2m
+    description: Температура на высоте 2 метров
+    tests:
+    - not_null
+  - name: relative_humidity_2m
+    description: Относительная влажность на высоте 2 метров
+    tests:
+    - not_null
+  - name: wind_speed_10m
+    description: Скорость ветра на высоте 10 метров
+    tests:
+    - not_null
+  - name: precipitation
+    description: Количество осадков
+    tests:
+    - not_null
+  - name: load_datetime
+    description: Дата и время загрузки данных
+    tests:
+    - not_null

@@ -1,0 +1,58 @@
+version: 2
+models:
+- name: int_daily_weather_metrics
+  description: Daily aggregated weather metrics
+  columns:
+  - name: date
+    description: Aggregation date
+    tests:
+    - not_null
+    - unique
+  - name: avg_temperature
+    description: Daily average temperature
+    tests:
+    - accepted_values:
+        min: -50
+        max: 60
+  - name: avg_humidity
+    description: Daily average humidity
+    tests:
+    - accepted_values:
+        min: 0
+        max: 100
+  - name: avg_wind_speed
+    description: Daily average wind speed
+    tests:
+    - accepted_values:
+        min: 0
+  - name: total_precipitation
+    description: Daily total precipitation
+    tests:
+    - accepted_values:
+        min: 0
+- name: int_temperature_anomalies
+  description: Temperature anomalies compared to climate norms
+  columns:
+  - name: date
+    tests:
+    - not_null
+    - unique
+  - name: temperature_anomaly
+    description: Deviation from climate norm
+    tests:
+    - accepted_values:
+        min: -40
+        max: 40
+- name: int_comfort_index
+  description: Calculated comfort index based on weather parameters
+  columns:
+  - name: date
+    tests:
+    - not_null
+    - unique
+  - name: comfort_index
+    description: Comfort index value
+    tests:
+    - accepted_values:
+        min: -30
+        max: 50

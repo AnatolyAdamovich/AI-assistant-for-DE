@@ -1,0 +1,16 @@
+sources:
+- name: exported_data
+  schema: last
+  tables:
+  - name: OpenMeteo API
+    identifier: OpenMeteo API_last_data
+    description: API для получения метеорологических данных
+    columns:
+    - name: temperature_2m
+      data_type: float
+    - name: relative_humidity_2m
+      data_type: float
+    - name: wind_speed_10m
+      data_type: float
+    - name: precipitation
+      data_type: float

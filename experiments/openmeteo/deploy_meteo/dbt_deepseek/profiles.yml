@@ -1,0 +1,12 @@
+airflow:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      host: clickhouse
+      user: default
+      pass: password
+      port: 9000
+      dbname: analytics
+      schema: analytics
+      threads: 4

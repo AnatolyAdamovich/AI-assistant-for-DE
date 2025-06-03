@@ -1,0 +1,78 @@
+business_process:
+  name: Погода в Москве
+  description: Мониторинг погодных условий в Москве
+  schedule: 0 1 * * *
+  roles:
+  - role: Синоптики
+  goals:
+  - Отслеживание среднесуточных значений погодных параметров
+  - Выявление дней с экстремальными погодными условиями
+  - Отображение динамики погодных параметров и аномалий
+  limitations: null
+data_sources:
+- name: OpenMeteo API
+  description: API для получения метеорологических данных
+  type: api
+  database: ''
+  data_schema:
+    temperature_2m: float
+    relative_humidity_2m: float
+    wind_speed_10m: float
+    precipitation: float
+  access_method: HTTP GET
+  data_volume: Небольшой
+  limitations: null
+  recommendations: []
+  connection_params:
+    url: https://api.open-meteo.com/v1/forecast
+metrics:
+- name: Среднесуточная температура
+  description: Среднее значение температуры воздуха за сутки
+  calculation_method: AVG(temperature_2m)
+  visualization_method: График
+  target_value: null
+  alerting_rules: Выявлять дни с температурой выше 25°C
+- name: Среднесуточная влажность
+  description: Среднее значение влажности за сутки
+  calculation_method: AVG(relative_humidity_2m)
+  visualization_method: График
+  target_value: null
+  alerting_rules: Выявлять дни с влажностью выше 80%
+- name: Среднесуточная скорость ветра
+  description: Среднее значение скорости ветра за сутки
+  calculation_method: AVG(wind_speed_10m)
+  visualization_method: График
+  target_value: null
+  alerting_rules: Выявлять дни со скоростью ветра выше 10 м/с
+- name: Осадки
+  description: Суммарное количество осадков за сутки
+  calculation_method: SUM(precipitation)
+  visualization_method: График
+  target_value: null
+  alerting_rules: Выявлять дни с осадками более 5 мм
+- name: Температурные аномалии
+  description: Разница между среднесуточной температурой и климатической нормой
+  calculation_method: AVG(temperature_2m) - climate_norm
+  visualization_method: График
+  target_value: null
+  alerting_rules: Выявлять дни с аномалией более 5°C
+- name: Индекс комфорта
+  description: Комбинированный индекс, учитывающий температуру, влажность и скорость
+    ветра
+  calculation_method: f(temperature_2m, relative_humidity_2m, wind_speed_10m)
+  visualization_method: График
+  target_value: null
+  alerting_rules: Выявлять дни с индексом ниже 30
+dwh:
+  limitations: null
+  retention_policy:
+    layer: RAW
+    TTL: 365 дней
+transformations:
+- name: Расчет среднесуточных значений
+  logic: GROUP BY date, AVG(temperature_2m), AVG(relative_humidity_2m), AVG(wind_speed_10m),
+    SUM(precipitation)
+- name: Расчет температурных аномалий
+  logic: JOIN климатической таблицы, AVG(temperature_2m) - climate_norm
+- name: Расчет индекса комфорта
+  logic: f(temperature_2m, relative_humidity_2m, wind_speed_10m)
