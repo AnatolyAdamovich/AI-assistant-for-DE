@@ -1,3 +1,6 @@
+'''
+LLM-модуль для извлечения структурированного ТЗ из пользовательского описания
+'''
 import os
 import yaml
 import logging
@@ -14,9 +17,22 @@ from src.core.models.analytics import DataSource, Metric, Transformation, Busine
 logger = logging.getLogger(name="SPECIFICATION")
 
 class AnalyticsSpecGenerator:
-    def __init__(self, with_metrics: bool = False,
-                model: str = settings.LLM_MODEL_FOR_ANALYTICS_SPEC,
-                temperature: float = settings.TEMPERATURE_ANALYTICS_SPEC):
+    def __init__(self, 
+                 with_metrics: bool = False,
+                 model: str = settings.LLM_MODEL_FOR_ANALYTICS_SPEC,
+                 temperature: float = settings.TEMPERATURE_ANALYTICS_SPEC):
+        '''
+        Инициализация генератора ТЗ на базе пользовательского описания
+        
+        Parameters
+        ----------
+        with_metrics: bool, optional
+            Флаг, указывающий, нужно ли включать подсчёт метрик при использовании LLM (по умолчанию False)
+        model: str, optional
+            Название модели LLM (по умолчанию settings.LLM_MODEL_FOR_ANALYTICS_SPEC).
+        temperature: float, optional
+            Параметр температуры для модели LLM (по умолчанию settings.TEMPERATURE_ANALYTICS_SPEC).
+        '''
         
         self.with_metrics = with_metrics
         self.llm = ChatOpenAI(
@@ -31,7 +47,6 @@ class AnalyticsSpecGenerator:
         self.parser = JsonOutputParser()
         logger.info(f"Используется {self.llm.model_name} с температурой {self.llm.temperature}")
         
-
     def extract_info_from_users_desription(self, 
                                            user_description: str) -> dict:
         '''
@@ -85,10 +100,10 @@ class AnalyticsSpecGenerator:
         
         return result
         
-    def extract_info_from_users_answers(self, 
+    def extract_info_from_users_answers_legacy(self, 
                                         user_answers: dict[str, str]) -> AnalyticsSpec:
         '''
-        Извлечь данные в структурированном виде (см. src.models.analytics) 
+        [DEPRECATED] Извлечь данные в структурированном виде (см. src.models.analytics) 
         из пользовательских ответов на вопросы.
 
         Parameters
@@ -130,6 +145,8 @@ class AnalyticsSpecGenerator:
         ----------
         business_process: BusinessProcess
             Описание бизнес-процесса
+        transformations: list[Transformation]
+            Массив с описанием преобразований
         metrics: list[Metric]
             Массив с описанием метрик
         '''
@@ -181,7 +198,18 @@ class AnalyticsSpecGenerator:
     def generate_spec(self, 
                       user_description: str,
                       with_recommendations: bool = True) -> AnalyticsSpec:
-        # извлечь инфо
+        '''
+        Полный цикл создания структурированного ТЗ
+
+        Parameters
+        ----------
+        user_description: str
+            Пользовательское описание на естественном языке
+        with_recommendations: bool, optional
+            Флаг, указывающий, нужно ли дополнительно генерировать рекоммендации по метрикам
+            и преобразованиям (по умолчанию True)
+        '''
+        
         result = self.extract_info_from_users_desription(user_description)
         # парсинг в объект класса AnalyticsSpec
         spec = self._from_dict_to_analytics_spec(result)
@@ -200,7 +228,8 @@ class AnalyticsSpecGenerator:
         return spec
     
     @staticmethod
-    def _count_cost(prompt_tokens: int, completion_tokens: int,
+    def _count_cost(prompt_tokens: int, 
+                    completion_tokens: int,
                     model_name: str):
         '''
         Подсчитать стоимость запроса
@@ -221,6 +250,11 @@ class AnalyticsSpecGenerator:
     def _clean_json(json_str: str) -> str:
         '''
         Убрать обрамление ```json (если LLM генерирует markdown)
+
+        Parameters
+        ----------
+        json_str : str
+            Строка в json-формате с возможным обрамлением
         '''
         json_str = json_str.content
         pattern = r"```(?:json)?\n(.*?)```"
@@ -273,7 +307,8 @@ class AnalyticsSpecGenerator:
         return spec
     
     @staticmethod
-    def _save_dict_to_yml(content: dict, filepath: str) -> None:
+    def _save_dict_to_yml(content: dict, 
+                          filepath: str) -> None:
         '''
         Сохранение словаря в yml-файл
         
