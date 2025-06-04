@@ -1,9 +1,12 @@
+'''
+LLM-модуль для генерации аналитического дашборда в BI-системе Metabase
+'''
 import os
 import yaml
 import re
 import logging
 import time
-from typing import List
+from typing import List, Any
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_openai import ChatOpenAI
@@ -21,7 +24,21 @@ class DbtGenerator:
                  with_metrics: bool = False,
                  model: str = settings.LLM_MODEL_FOR_DBT_MODEL,
                  temperature: float = settings.TEMPERATURE_DBT_MODEL):
+        '''
+        Инициализация генератора dbt-проекта
         
+        Parameters
+        ----------
+        analytics_specification: AnalyticsSpec
+            Спецификация аналитики, на основе которой будет генерироваться DAG
+        with_metrics: bool, optional
+            Флаг, указывающий, нужно ли включать подсчёт метрик при использовании LLM (по умолчанию False)
+        model: str, optional
+            Название модели LLM (по умолчанию settings.LLM_MODEL_FOR_ANALYTICS_SPEC).
+        temperature: float, optional
+            Параметр температуры для модели LLM (по умолчанию settings.TEMPERATURE_ANALYTICS_SPEC).
+        '''
+
         self.with_metrics = with_metrics
 
         self.data_sources = analytics_specification.data_sources
@@ -98,7 +115,16 @@ class DbtGenerator:
         logging.info("sources.yml сгенерирован")
         return sources
 
-    def _generate_stage_models(self, sources: dict) -> dict:
+    def _generate_stage_models(self, 
+                               sources: dict[str, Any]) -> dict[str, Any]:
+        '''
+        Генерация dbt-моделей на stage-слое
+
+        Parameters
+        ----------
+        sources: dict[str, Any]
+            Описание источников данных в dbt-проекте (файл source.yml)
+        '''
         system_template = prompts.SYSTEM_PROMPT_DBT_MODELS_STAGE
         user_template = prompts.USER_PROMPT_DBT_MODELS_STAGE
         
@@ -140,7 +166,16 @@ class DbtGenerator:
         logging.info("Stage-модели сгенерированы")
         return result
     
-    def _generate_intermediate_models(self, stage_models_schema) -> List[str]:
+    def _generate_intermediate_models(self, 
+                                      stage_models_schema: dict[str, Any]) -> dict[str, Any]:
+        '''
+        Генерация dbt-моделей на core-слое
+
+        Parameters
+        ----------
+        stage_models_schema: dict[str, Any]
+            Описание структуры dbt-моделей на stage-слое
+        '''
         system_template = prompts.SYSTEM_PROMPT_DBT_MODELS_CORE
         user_template = prompts.USER_PROMPT_DBT_MODELS_CORE
 
@@ -187,7 +222,16 @@ class DbtGenerator:
         logging.info("Core-модели сгенерированы")
         return result
 
-    def _generate_marts(self, core_models_schema):
+    def _generate_marts(self, 
+                        core_models_schema: dict[str, Any]) -> dict[str, Any]:
+        '''
+        Генерация dbt-моделей на marts-слое
+
+        Parameters
+        ----------
+        core_models_schema: dict[str, Any]
+            Описание структуры dbt-моделей на core-слое
+        '''
         system_template = prompts.SYSTEM_PROMPT_DBT_MODELS_MARTS
         user_template = prompts.USER_PROMPT_DBT_MODELS_MARTS
 
@@ -233,6 +277,9 @@ class DbtGenerator:
         return result
 
     def generate_project(self):
+        '''
+        Полный цикл генерации проекта (profiles + sources + stage + core + marts)
+        '''
         # sources.yml
         sources = self._generate_sources()
         self._save_yml_from_dict(content=sources,
@@ -272,7 +319,18 @@ class DbtGenerator:
                                      file_path=settings.DBT_MODELS_DIR / "marts" / f"{model_name}.sql")
             
     @staticmethod
-    def _save_yml_from_str(content: str, file_path: str) -> None:
+    def _save_yml_from_str(content: str, 
+                           file_path: str) -> None:
+        '''
+        Сохранение строки в файл с расширением yml
+
+        Parameters
+        ----------
+        content: str
+            Строка, которую надо сохранить
+        file_path: str
+            Путь, куда сохранять файл
+        '''
         dir_path = os.path.dirname(file_path)
         if dir_path and not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -282,7 +340,18 @@ class DbtGenerator:
         logger.info(f"Файл сохранен {file_path}")
     
     @staticmethod
-    def _save_yml_from_dict(content: dict, file_path: str) -> None:
+    def _save_yml_from_dict(content: dict, 
+                            file_path: str) -> None:
+        '''
+        Сохранение словаря в файл с расширением yml
+
+        Parameters
+        ----------
+        content: dict
+            Словарь, который надо сохранить
+        file_path: str
+            Путь, куда сохранять файл
+        '''
         dir_path = os.path.dirname(file_path)
         if dir_path and not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -292,7 +361,18 @@ class DbtGenerator:
         logger.info(f"Файл сохранен {file_path}")
     
     @staticmethod
-    def _save_sql_model(content: str, file_path: str) -> None:
+    def _save_sql_model(content: str, 
+                        file_path: str) -> None:
+        '''
+        Сохранение строки в sql-модель
+
+        Parameters
+        ----------
+        content: str
+            Строка, которую надо сохранить
+        file_path: str
+            Путь, куда сохранять файл
+        '''
         dir_path = os.path.dirname(file_path)
         if dir_path and not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -303,6 +383,14 @@ class DbtGenerator:
     
     @staticmethod
     def _clean_sql_code(code_str: str) -> str:
+        '''
+        Очистить сгенерированную строку от обрамления
+        
+        Parameters
+        ----------
+        code_str: str
+            Код, который надо почистить
+        '''
         # убрать обрамление ``` или ```sql и оставить только содержимое
         pattern = r"```(?:sql)?\n(.*?)```"
         matches = re.findall(pattern, code_str, re.DOTALL)
@@ -312,10 +400,20 @@ class DbtGenerator:
         return code_str.strip()
 
     @staticmethod
-    def _count_cost(prompt_tokens: int, completion_tokens: int,
+    def _count_cost(prompt_tokens: int, 
+                    completion_tokens: int,
                     model_name: str):
         '''
         Подсчитать стоимость запроса
+
+        Parameters
+        ----------
+        prompt_tokens : int
+            Количество входящих токенов
+        completion_tokens: int
+            Количество выходящих токенов
+        model_name : str
+            LLM-модель
         '''
         pricing = settings.LLM_PRICING[model_name]
         return (prompt_tokens * pricing["input"]) / 1000 + (completion_tokens * pricing["output"]) / 1000
