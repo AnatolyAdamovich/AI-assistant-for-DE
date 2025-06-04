@@ -1,3 +1,6 @@
+'''
+Используемые LLM-модулями промпты для генерации кода
+'''
 from pydantic import BaseModel, Field
 
 class Prompts(BaseModel):
