@@ -1,3 +1,6 @@
+'''
+Pydantic-классы, описывающие структуру технического задания
+'''
 from typing import List, Dict, Optional
 from pydantic import BaseModel
 
