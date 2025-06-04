@@ -1,3 +1,6 @@
+'''
+LLM-модуль для генерации аналитического дашборда в BI-системе Metabase
+'''
 import requests
 import logging
 import time
@@ -14,12 +17,15 @@ from src.core.models.analytics import Metric
 logger = logging.getLogger(name="DASHBOARD")
 
 class MetabaseDashboardGenerator:
-    def __init__(self, metabase_url: str, username: str, password: str,
+    def __init__(self, 
+                 metabase_url: str, 
+                 username: str, 
+                 password: str,
                  with_metrics: bool = False,
                  model: str = settings.LLM_MODEL_FOR_METABASE,
                  temperature: float = settings.TEMPERATURE_METABASE):
         '''
-        Инициализация объекта
+        Инициализация генератора визуализаций в Metabase
         
         Parameters
         ----------
@@ -29,7 +35,16 @@ class MetabaseDashboardGenerator:
             Логин для авторизации
         password: str
             Пароль для авторизации
+        with_metrics: bool, optional
+            Флаг, указывающий, нужно ли включать подсчёт метрик при использовании LLM (по умолчанию False)
+        model: str, optional
+            Название модели LLM (по умолчанию settings.LLM_MODEL_FOR_METABASE).
+        temperature: float, optional
+            Параметр температуры для модели LLM (по умолчанию settings.TEMPERATURE_METABASE).
+
         '''
+        self.with_metrics = with_metrics
+        
         self.metabase_url = metabase_url.rstrip('/')
         self.username = username
         self.password = password
@@ -51,7 +66,7 @@ class MetabaseDashboardGenerator:
 
     def _authenticate(self) -> str:
         '''
-        Аутентификация
+        Аутентификация в Metabase
         '''
         url = f"{self.metabase_url}/api/session"
         response = requests.post(url, json={
@@ -64,12 +79,19 @@ class MetabaseDashboardGenerator:
         return response.json()['id']
     
     def _headers(self) -> dict[str, str]:
+        '''
+        Заголовки для REST API
+        '''
         return {
             "Content-Type": "application/json",
             "X-Metabase-Session": self.session_id
         }
 
-    def create_card(self, name: str, visualization_settings: dict[str, Any], query: dict[str, Any], display: str = "table") -> int:
+    def create_card(self, 
+                    name: str, 
+                    visualization_settings: dict[str, Any], 
+                    query: dict[str, Any], 
+                    display: str = "table") -> int:
         '''
         Создание карточки (график/таблица/скаляр)
         
@@ -81,8 +103,8 @@ class MetabaseDashboardGenerator:
             Настройки визуализации
         query: dict[str, Any]
             Запрос
-        display: str = "table"
-            Вид отображения
+        display: str, optional
+            Вид отображения (по умолчанию "table")
         '''
         url = f"{self.metabase_url}/api/card"
         payload = {
@@ -120,7 +142,9 @@ class MetabaseDashboardGenerator:
         dashboard_data = resp.json()
         return dashboard_data
 
-    def create_dashboard(self, name: str, description: str = "") -> int:
+    def create_dashboard(self, 
+                         name: str, 
+                         description: str = "") -> int:
         '''
         Создание отчёта
 
@@ -128,8 +152,8 @@ class MetabaseDashboardGenerator:
         ----------
         name: str
             Название отчёта
-        description: str
-            Описание отчёта
+        description: str, optional
+            Описание отчёта (по умолчанию "")
         '''
         
         url = f"{self.metabase_url}/api/dashboard"
@@ -143,12 +167,16 @@ class MetabaseDashboardGenerator:
 
         return response.json()['id']
     
-    def add_cards_to_dashboard(self, dashboard_id: int, cards_ids: list[dict[str, Any]]) -> int:
+    def add_cards_to_dashboard(self, 
+                               dashboard_id: int, 
+                               cards_ids: list[dict[str, Any]]) -> int:
         '''
-        Создание отчёта и добавление карточек
+        Создание отчёта и добавление карточек (dashcards)
         
         Parameters
         ----------
+        dashboard_id: int
+            Идентификатор дашборда, на который добавляем карточки
         cards_ids: list[dict[str, Any]]
             Массив с описанием карточек 
         '''
@@ -177,7 +205,9 @@ class MetabaseDashboardGenerator:
         response.raise_for_status()
         return response.json()
     
-    def generate_cards_data(self, marts_schema: dict[str, Any], metrics: list[dict[Metric]]) -> dict[str, Any]:
+    def generate_cards_data(self, 
+                            marts_schema: dict[str, Any], 
+                            metrics: list[dict[Metric]]) -> dict[str, Any]:
         '''
         Генерация payload для карточек в Metabase на основе описания схемы витрин и метрик
 
@@ -231,7 +261,9 @@ class MetabaseDashboardGenerator:
         logger.info(f'Сгенерированы настройки для {len(result)} карточек')
         return result
     
-    def generate_dashboard(self, marts_schema: dict[str, Any], metrics: list[dict[Metric]]):
+    def generate_dashboard(self, 
+                           marts_schema: dict[str, Any], 
+                           metrics: list[dict[Metric]]):
         '''
         Генерация дашборда с нужными графиками
 
@@ -265,7 +297,8 @@ class MetabaseDashboardGenerator:
         logger.info("Аналитический дашборд готов к использованию")
 
     @staticmethod
-    def _count_cost(prompt_tokens: int, completion_tokens: int,
+    def _count_cost(prompt_tokens: int, 
+                    completion_tokens: int,
                     model_name: str):
         '''
         Подсчитать стоимость запроса
