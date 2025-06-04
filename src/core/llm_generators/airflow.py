@@ -1,3 +1,6 @@
+'''
+LLM-модуль для генерации ETL/ELT-процессов
+'''
 import os
 import logging
 import re
@@ -15,13 +18,31 @@ from src.core.models.analytics import AnalyticsSpec
 logger = logging.getLogger(name="AIRFLOW")
 
 class AirflowDagGenerator:
-    def __init__(self, analytics_specification: AnalyticsSpec,
+    def __init__(self, 
+                 analytics_specification: AnalyticsSpec,
                  template_path: str = settings.TEMPLATE_DAG_PATH,
                  requirements_path: str = settings.REQUIREMENTS_PATH,
                  with_metrics: bool = False,
                  model: str = settings.LLM_MODEL_FOR_AIRFLOW_MOVING_DATA,
                  temperature: float = settings.TEMPERATURE_AIRFLOW_MOVING_DATA):
-        
+        '''
+        Инициализация генератора Airflow DAG.
+
+        Parameters
+        ----------
+        analytics_specification: AnalyticsSpec
+            Спецификация аналитики, на основе которой будет генерироваться DAG
+        template_path: str, optional
+            Путь к шаблону DAG (по умолчанию settings.TEMPLATE_DAG_PATH)
+        requirements_path: str, optional
+            Путь к файлу с зависимостями (по умолчанию settings.REQUIREMENTS_PATH)
+        with_metrics: bool, optional
+            Флаг, указывающий, нужно ли включать подсчёт метрик при использовании LLM (по умолчанию False)
+        model: str, optional
+            Название модели LLM (по умолчанию settings.LLM_MODEL_FOR_AIRFLOW_MOVING_DATA).
+        temperature: float, optional
+            Параметр температуры для модели LLM (по умолчанию settings.TEMPERATURE_AIRFLOW_MOVING_DATA).
+        '''
         self.with_metrics = with_metrics
 
         self.data_sources = analytics_specification.data_sources
@@ -37,15 +58,7 @@ class AirflowDagGenerator:
                             api_key=settings.OPENAI_API_KEY,
                             base_url=settings.BASE_URL
                             )
-        # self.llm_for_args = ChatOpenAI(
-        #                         model=settings.LLM_MODEL_FOR_AIRFLOW_ARGS,
-        #                         temperature=settings.TEMPERATURE_AIRFLOW_ARGS,
-        #                         max_tokens=None,
-        #                         timeout=None,
-        #                         max_retries=2,
-        #                         api_key=settings.OPENAI_API_KEY,
-        #                         base_url=settings.BASE_URL
-        #                     )
+        
         self.parser = JsonOutputParser()
         
         logger.info(f"Используется {self.llm.model_name} с температурой {self.llm.temperature}")
@@ -58,7 +71,7 @@ class AirflowDagGenerator:
          
     def _generate_dag_args(self) -> dict[str, str]:
         '''
-        Генерация аргументов для airflow DAG.
+        Генерация аргументов для Airflow DAG.
         '''
         system_template = prompts.SYSTEM_PROMPT_AIRFLOW_ARGS
         user_template = prompts.USER_PROMPT_AIRFLOW_ARGS
@@ -103,7 +116,7 @@ class AirflowDagGenerator:
 
     def _generate_moving_data_function(self) -> str:
         '''
-        Генерация функции для airflow для перемещения данных из источника в хранилище
+        Генерация функции перемещения данных из источника в хранилище
         '''
         system_template = prompts.SYSTEM_PROMPT_AIRFLOW_MOVING_DATA
         user_template = prompts.USER_PROMPT_AIRFLOW_MOVING_DATA
@@ -166,6 +179,9 @@ class AirflowDagGenerator:
         return result
 
     def _generate_dag_args_legacy(self) -> str:
+        '''
+        [DEPRECATED] Функция для генерации аргументов Airflow DAG
+        '''
         
         system_template = prompts.SYSTEM_PROMPT_AIRFLOW_ARGS
         user_template = prompts.USER_PROMPT_AIRFLOW_ARGS
@@ -184,6 +200,9 @@ class AirflowDagGenerator:
         return self._clean_code(result.content)
 
     def _generate_moving_data_function_legacy(self) -> str:
+        '''
+        [DEPRECATED] Функция для генерация таски перемещения данных из источника в хранилище
+        '''
         system_template = prompts.SYSTEM_PROMPT_AIRFLOW_MOVING_DATA
         user_template = prompts.USER_PROMPT_AIRFLOW_MOVING_DATA
         
@@ -202,6 +221,9 @@ class AirflowDagGenerator:
         return self._indent_code_block(cleaned_code, indent=4)
 
     def generate_dag(self) -> None:
+        '''
+        Полный цикл генерации (аргументы + функция перемещения данных + заполнение template)
+        '''
         dag_args = self._generate_dag_args()
         moving_function_code = self._generate_moving_data_function()
         
@@ -214,7 +236,8 @@ class AirflowDagGenerator:
         self._save_code_to_file(code=dag_code, name=dag_args["dag_name"] + ".py")
 
     @staticmethod
-    def _count_cost(prompt_tokens: int, completion_tokens: int,
+    def _count_cost(prompt_tokens: int, 
+                    completion_tokens: int,
                     model_name: str):
         '''
         Подсчитать стоимость запроса
@@ -226,14 +249,21 @@ class AirflowDagGenerator:
         completion_tokens: int
             Количество выходящих токенов
         model_name : str
-            LLM-модель
+            Название LLM-модели
         '''
         pricing = settings.LLM_PRICING[model_name]
         return (prompt_tokens * pricing["input"]) / 1000 + (completion_tokens * pricing["output"]) / 1000
 
     @staticmethod
     def _clean_code(code_str: str) -> str:
-        # убрать обрамление ``` или ```python (LLM генерит markdown)
+        '''
+        Убрать обрамление ``` или ```python (LLM периодически генерит markdown)
+
+        Parameters
+        ----------
+        code_str: str
+            Сгенерированный код в формате строки
+        '''
         pattern = r"```(?:python)?\n(.*?)```"
         matches = re.findall(pattern, code_str, re.DOTALL)
         if matches:
@@ -243,6 +273,16 @@ class AirflowDagGenerator:
     
     @staticmethod
     def _indent_code_block(code_str: str, indent: int) -> str:
+        '''
+        Внести отступы в блоки кода
+        
+        Parameters
+        ----------
+        code_str: str
+            Код
+        indent: int
+            Количество пробелов для отступа
+        '''
         lines = code_str.splitlines()
         if not lines:
             return ""
