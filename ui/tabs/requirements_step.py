@@ -54,5 +54,5 @@ if st.button("Запуск AI 🚀"):
     with st.spinner("Обработка ..."):
         analytics_spec_generated = AnalyticsSpecGenerator(model="just-ai/yandexgpt/yandexgpt/rc").generate_spec(business_desc)
     st.success("Объект AnalyticsSpec сгенерирован!")
-    with st.expander("Показать ТЗ"):
+    with st.expander("Показать AnalyticsSpec"):
       st.json(analytics_spec_generated.model_dump())
