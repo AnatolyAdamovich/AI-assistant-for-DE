@@ -21,17 +21,26 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-uploaded_spec = st.file_uploader("Загрузите AnalyticsSpec (yaml):")
+uploaded_spec = st.file_uploader("Загрузите AnalyticsSpec (yaml)")
+upload_marts_schema = st.fileuploader("Загрузите schema.yml слоя marts")
+
 if uploaded_spec:
     data = yaml.safe_load(uploaded_spec)
     analytics_spec = AnalyticsSpec(**data)
-    if analytics_spec:
-        if st.button("Запуск AI 🚀"):
-            with st.spinner("Обработка ..."):
-                dashboard_generator = MetabaseDashboardGenerator(
-                    metabase_url=settings.METABASE_URL,
-                    username=settings.METABASE_USERNAME,
-                    password=settings.METABASE_PASSWORD,
-                )
-                
-            st.success("Dashboard сгенерирован!")
+    metrics = analytics_spec.metrics
+if upload_marts_schema:
+    schema = yaml.safe_load(upload_marts_schema)
+
+if metrics and schema:
+    if st.button("Запуск AI 🚀"):
+        with st.spinner("Обработка ..."):
+            dashboard_generator = MetabaseDashboardGenerator(
+                metabase_url=settings.METABASE_URL,
+                username=settings.METABASE_USERNAME,
+                password=settings.METABASE_PASSWORD,
+            )
+            cards = dashboard_generator.generate_dashboard(marts_schema=schema,
+                                                           metrics=metrics)
+        st.success("Dashboard сгенерирован!")
+        with st.expander("Показать dashcards"):
+            st.json(cards)
