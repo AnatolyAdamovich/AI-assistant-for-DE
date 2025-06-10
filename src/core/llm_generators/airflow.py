@@ -234,6 +234,7 @@ class AirflowDagGenerator:
         )
         logger.info("Шаблон DAG заполнен")
         self._save_code_to_file(code=dag_code, name=dag_args["dag_name"] + ".py")
+        return dag_code
 
     @staticmethod
     def _count_cost(prompt_tokens: int, 

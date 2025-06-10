@@ -317,7 +317,8 @@ class DbtGenerator:
             if model_name != 'schema_yml':
                 self._save_sql_model(content=sql_code,
                                      file_path=settings.DBT_MODELS_DIR / "marts" / f"{model_name}.sql")
-            
+        return stage_models, core_models, marts_models
+
     @staticmethod
     def _save_yml_from_str(content: str, 
                            file_path: str) -> None:
