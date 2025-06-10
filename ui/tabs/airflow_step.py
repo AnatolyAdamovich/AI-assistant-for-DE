@@ -26,6 +26,8 @@ if uploaded_spec:
     if analytics_spec:
         if st.button("Запуск AI 🚀"):
             with st.spinner("Обработка ..."):
-                # Пример: парсим spec и генерируем DAG
-                dag_generator = AirflowDagGenerator(analytics_spec).generate_dag()
+                # Генерация DAG-кода
+                dag_code = AirflowDagGenerator(analytics_spec).generate_dag()
             st.success("Airflow Dag сгенерирован!")
+            with st.expander("Показать код"):
+                st.code(dag_code, language="python")

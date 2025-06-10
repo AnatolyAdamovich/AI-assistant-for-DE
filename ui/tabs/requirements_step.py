@@ -49,9 +49,10 @@ with st.expander("Подробнее"):
 **Чем подробнее вы опишете задачу, тем точнее и полезнее будет результат!**
     """)
 
-business_desc = st.text_area("Опишите желаемую аналитическую систему")
+business_desc = st.text_area("Опишите желаемую аналитическую систему", height=300)
 if st.button("Запуск AI 🚀"):
     with st.spinner("Обработка ..."):
-        analytics_spec_generated = AnalyticsSpecGenerator().extract_info_from_users_desription(business_desc)
-    st.success("Объект AnalyticsSpec сгенерирован! ⬇️")
-    st.json(analytics_spec_generated.model_dump())
+        analytics_spec_generated = AnalyticsSpecGenerator(model="just-ai/yandexgpt/yandexgpt/rc").generate_spec(business_desc)
+    st.success("Объект AnalyticsSpec сгенерирован!")
+    with st.expander("Показать ТЗ"):
+      st.json(analytics_spec_generated.model_dump())
