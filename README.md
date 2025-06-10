@@ -32,6 +32,43 @@
 * *Langchain* — доступ к LLM и обработка естественного языка
 * *Streamlit* — пользовательский интерфейс
 
+## Setup
+
+1. Установите необходимые библиотеки из файла requirements.txt:
+
+```bash
+pip install -r requirements.txt
+```
+
+2. В корне проекта создайте файл .env и заполните его следующими переменными окружения:
+
+```
+# LLM
+OPENAI_API_KEY=your_openai_api_key
+BASE_URL=your_base_url
+
+# Data Warehouse (DWH)
+DWH_TYPE=your_dwh_type
+DWH_HOST=your_dwh_host
+DWH_USER=your_dwh_user
+DWH_PASS=your_dwh_password
+DWH_PORT=your_dwh_port
+DWH_DBNAME=your_dwh_dbname
+DWH_SCHEMA=your_dwh_schema
+DWH_THREADS=your_dwh_threads
+
+# BI (Metabase)
+METABASE_URL=your_metabase_url
+METABASE_USERNAME=your_metabase_username
+METABASE_PASSWORD=your_metabase_password
+```
+
+3. Из корневой директории запустите проект с помощью команды:
+
+```bash
+streamlit run ui/app.py
+```
+
 ## Repository Structure
 
 | Директория   | Описание |
