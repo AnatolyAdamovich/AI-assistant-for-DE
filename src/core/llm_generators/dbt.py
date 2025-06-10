@@ -276,7 +276,7 @@ class DbtGenerator:
 
         return result
 
-    def generate_project(self):
+    def generate_project(self) -> dict[str, Any]:
         '''
         Полный цикл генерации проекта (profiles + sources + stage + core + marts)
         '''
@@ -317,7 +317,7 @@ class DbtGenerator:
             if model_name != 'schema_yml':
                 self._save_sql_model(content=sql_code,
                                      file_path=settings.DBT_MODELS_DIR / "marts" / f"{model_name}.sql")
-        return stage_models, core_models, marts_models
+        return {'stage': stage_models, 'core': core_models, 'marts': marts_models}
 
     @staticmethod
     def _save_yml_from_str(content: str, 
