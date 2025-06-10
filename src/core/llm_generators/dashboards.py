@@ -263,7 +263,7 @@ class MetabaseDashboardGenerator:
     
     def generate_dashboard(self, 
                            marts_schema: dict[str, Any], 
-                           metrics: list[dict[Metric]]):
+                           metrics: list[dict[Metric]]) -> dict[str, Any]:
         '''
         Генерация дашборда с нужными графиками
 
@@ -295,6 +295,7 @@ class MetabaseDashboardGenerator:
                                     cards_ids=cards_ids)
         
         logger.info("Аналитический дашборд готов к использованию")
+        return cards_data
 
     @staticmethod
     def _count_cost(prompt_tokens: int, 
